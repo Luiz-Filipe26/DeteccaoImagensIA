@@ -1,8 +1,8 @@
-package aula1.main;
+package deteccao_imagens_ia.main;
 
-import aula1.utils.InterfaceGrafica;
+import deteccao_imagens_ia.view.InterfaceGrafica;
 
-public class AnalisadorArvore {
+public class DeteccaoImagensIA {
     public static void main(String[] args) {
         var interfaceGrafica = new InterfaceGrafica();
         interfaceGrafica.setVisible(true);

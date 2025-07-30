@@ -1,12 +1,13 @@
-package aula1.utils;
+package deteccao_imagens_ia.view;
+
+import deteccao_imagens_ia.utils.AvaliadorDesenho;
+import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.Map;
 
 public class InterfaceGrafica extends JFrame {
     public static final int LARGURA_JANELA = 400;
@@ -23,7 +24,7 @@ public class InterfaceGrafica extends JFrame {
     private final JCheckBox checkBoxTreinarModelo;
 
     public InterfaceGrafica() {
-        setTitle("Desenhador de Árvore");
+        setTitle("Desenhador de Boneco de Palito");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(LARGURA_JANELA, ALTURA_JANELA);
         setLocationRelativeTo(null);
@@ -34,7 +35,7 @@ public class InterfaceGrafica extends JFrame {
         textAreaOutput = new JTextArea();
         textAreaOutput.setEditable(false);
         textAreaOutput.setFont(fonte);
-        JScrollPane scrollPaneOutput = new JScrollPane(textAreaOutput);
+        var scrollPaneOutput = new JScrollPane(textAreaOutput);
         scrollPaneOutput.setPreferredSize(new Dimension(LARGURA_JANELA, (int) (ALTURA_JANELA * 0.2)));
         contentPane.add(scrollPaneOutput, BorderLayout.NORTH);
 
@@ -54,12 +55,12 @@ public class InterfaceGrafica extends JFrame {
 
         checkBoxTreinarModelo = new JCheckBox("Treinar modelo");
         checkBoxTreinarModelo.setFont(fonte);
-        JPanel painelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        var painelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         painelInferior.add(checkBoxTreinarModelo);
         contentPane.add(painelInferior, BorderLayout.SOUTH);
 
 
-        textAreaOutput.setText("Desenhe uma árvore com 20 bolinhas!");
+        textAreaOutput.setText("Desenhe uma boneco de palito com 20 bolinhas!");
     }
 
     public void mouseClique(MouseEvent mouseEvent) {
@@ -89,19 +90,11 @@ public class InterfaceGrafica extends JFrame {
     }
 
     public void mostrarResultado(ResultadoClassificacao resultado) {
-        if(checkBoxTreinarModelo.isSelected()) {
-            if (resultado == ResultadoClassificacao.ARVORE) {
-                textAreaOutput.setText("Resultado - o modelo acertou: uma árvore!");
-            } else {
-                textAreaOutput.setText("Resultado - o modelo errou: Não é uma árvore!");
-            }
-        }
-        else {
-            if (resultado == ResultadoClassificacao.ARVORE) {
-                textAreaOutput.setText("Resultado: uma árvore!");
-            } else {
-                textAreaOutput.setText("Resultado: Não é uma árvore!");
-            }
-        }
+        var ehBoneco = resultado == ResultadoClassificacao.DESENHO_ESPERADO;
+        var texto = checkBoxTreinarModelo.isSelected()
+                ? (ehBoneco ? "Resultado - o modelo acertou: um boneco de palito!" : "Resultado - o modelo errou: Não é um boneco de palito!")
+                : (ehBoneco ? "Resultado: um boneco de palito!" : "Resultado: Não é um boneco de palito!");
+        textAreaOutput.setText(texto);
     }
+
 }
