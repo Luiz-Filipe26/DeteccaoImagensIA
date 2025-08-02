@@ -137,7 +137,7 @@ public class InterfaceGrafica extends JFrame {
 
         quantidadeBolinhas++;
         if (quantidadeBolinhas == bolinhas.length) {
-            var avaliadorDesenho = new AvaliadorDesenho(LARGURA_JANELA, ALTURA_JANELA);
+            var avaliadorDesenho = new AvaliadorDesenho();
             var resultado = avaliadorDesenho.analisarDesenho(bolinhas);
             mostrarResultado(resultado);
         }

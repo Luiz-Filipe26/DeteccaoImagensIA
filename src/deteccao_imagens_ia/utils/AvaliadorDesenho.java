@@ -6,13 +6,6 @@ import deteccao_imagens_ia.rede_neural.RedeNeural;
 import java.awt.*;
 
 public class AvaliadorDesenho {
-    private final int larguraDesenho;
-    private final int alturaDesenho;
-
-    public AvaliadorDesenho(int larguraDesenho, int alturaDesenho) {
-        this.larguraDesenho = larguraDesenho;
-        this.alturaDesenho = alturaDesenho;
-    }
 
     public ResultadoClassificacao analisarDesenho(Point[] bolinhas) {
         var rede = criarRedeNeuralValida();
@@ -27,16 +20,41 @@ public class AvaliadorDesenho {
         return rede;
     }
 
+    private int[] encontrarDimensoesDesenho(Point[] bolinhas) {
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (Point p : bolinhas) {
+            if (p.x < minX) minX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y > maxY) maxY = p.y;
+        }
+
+        int larguraDesenho = maxX - minX;
+        int alturaDesenho = maxY - minY;
+
+        return new int[] {minX, minY, larguraDesenho, alturaDesenho};
+    }
+
     private double[] calcularEntradas(Point[] bolinhas, int quantidadeEntradas) {
-        int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(quantidadeEntradas);
+        int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(quantidadeEntradas); // entrada de 50 ou 100
         double[] entradas = new double[quantidadeEntradas];
+
+        int[] novasDimensoesDesenho = encontrarDimensoesDesenho(bolinhas);
+        int minX = novasDimensoesDesenho[0];
+        int minY = novasDimensoesDesenho[1];
+        int larguraDesenho = novasDimensoesDesenho[2];
+        int alturaDesenho = novasDimensoesDesenho[3];
 
         int larguraCelula = larguraDesenho / tamanhoLadoDoGrid;
         int alturaCelula = alturaDesenho / tamanhoLadoDoGrid;
 
         for (var ponto : bolinhas) {
-            int coluna = ponto.x / larguraCelula;
-            int linha = ponto.y / alturaCelula;
+            int coluna = (ponto.x - minX) / larguraCelula;
+            int linha = (ponto.y - minY) / alturaCelula;
 
             if (!estaDentroDoGrid(linha, coluna, tamanhoLadoDoGrid)) continue;
             int indice = linha * tamanhoLadoDoGrid + coluna;
