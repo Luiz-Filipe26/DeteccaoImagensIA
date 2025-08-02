@@ -8,20 +8,27 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 public class InterfaceGrafica extends JFrame {
-    public static final int LARGURA_JANELA = 400;
-    public static final int ALTURA_JANELA = 500;
-    public static final Color COR_MARROM = new Color(150, 75, 0);
-    private static final Color COR_VERDE = Color.GREEN;
+    public static final int LARGURA_JANELA = 600;
+    public static final int ALTURA_JANELA = 800;
+    private static final Color COR_PRETA = Color.BLACK;
     public static final int RAIO_BOLINHA = 30;
     public static final int TOTAL_BOLINHAS = 20;
     private final Point[] bolinhas = new Point[TOTAL_BOLINHAS];
     private int quantidadeBolinhas;
     private final BufferedImage bufferGrafico = new BufferedImage(LARGURA_JANELA, ALTURA_JANELA, BufferedImage.TYPE_INT_ARGB);
-    private final JTextArea textAreaOutput;
+    private final JLabel textoBolinhasRestantes;
     private final static Font fonte = new Font("Arial", Font.PLAIN, 20);
+    private final static Font fonteMenor = new Font("Arial", Font.PLAIN, 16);
+    private final static Font fonteTitulo = new Font("Arial", Font.BOLD, 24);
     private final JCheckBox checkBoxTreinarModelo;
+    private final JRadioButton isBonecoPalito;
+    private final JRadioButton isNotBonecoPalito;
+    private final ButtonGroup grupoRaddioButton;
+    private final JButton limparDesenho;
+    private final JPanel painelGrafico;
 
     public InterfaceGrafica() {
         setTitle("Desenhador de Boneco de Palito");
@@ -29,38 +36,95 @@ public class InterfaceGrafica extends JFrame {
         setSize(LARGURA_JANELA, ALTURA_JANELA);
         setLocationRelativeTo(null);
 
-        var contentPane = getContentPane();
-        contentPane.setLayout(new BorderLayout());
+        var painelPrincipal = getContentPane();
+        painelPrincipal.setLayout(new BorderLayout());
 
-        textAreaOutput = new JTextArea();
-        textAreaOutput.setEditable(false);
-        textAreaOutput.setFont(fonte);
-        var scrollPaneOutput = new JScrollPane(textAreaOutput);
-        scrollPaneOutput.setPreferredSize(new Dimension(LARGURA_JANELA, (int) (ALTURA_JANELA * 0.2)));
-        contentPane.add(scrollPaneOutput, BorderLayout.NORTH);
+        // Agrupar título texto de instruções e botões
+        var painelSuperior = new JPanel();
+        painelSuperior.setLayout(new BoxLayout(painelSuperior, BoxLayout.Y_AXIS));
 
-        JPanel panelGrafico = new JPanel() {
+        JLabel titulo = new JLabel("Rede para Reconhecer Desenho");
+        titulo.setFont(fonteTitulo);
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titulo.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        painelSuperior.add(titulo);
+
+        var painelInstrucao = new JPanel(new GridLayout(2, 1));
+        painelInstrucao.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JLabel textoInstrucao = new JLabel("Desenhe um boneco de palito com 20 bolinhas!");
+        textoBolinhasRestantes = new JLabel();
+        textoInstrucao.setFont(fonte);
+        textoBolinhasRestantes.setFont(fonte);
+        painelInstrucao.add(textoInstrucao);
+        painelInstrucao.add(textoBolinhasRestantes);
+        painelSuperior.add(painelInstrucao, BorderLayout.CENTER);
+
+        // Agrupar botões
+        JPanel painelBotoes = new JPanel();
+        painelBotoes.setLayout(new BoxLayout(painelBotoes, BoxLayout.Y_AXIS));
+        JPanel painelLinha1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        checkBoxTreinarModelo = new JCheckBox("Treinar modelo");
+        checkBoxTreinarModelo.setFont(fonteMenor);
+        isBonecoPalito = new JRadioButton("É um boneco de palito");
+        isNotBonecoPalito = new JRadioButton("Não é");
+        grupoRaddioButton = new ButtonGroup();
+        isBonecoPalito.setEnabled(false);
+        isNotBonecoPalito.setEnabled(false);
+        isBonecoPalito.setFont(fonteMenor);
+        isNotBonecoPalito.setFont(fonteMenor);
+        grupoRaddioButton.add(isBonecoPalito);
+        grupoRaddioButton.add(isNotBonecoPalito);
+        painelLinha1.add(checkBoxTreinarModelo);
+        painelLinha1.add(isBonecoPalito);
+        painelLinha1.add(isNotBonecoPalito);
+        JPanel painelLinha2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        limparDesenho = new JButton("Limpar Desenho");
+        limparDesenho.setFont(fonteMenor);
+        painelLinha2.add(limparDesenho);
+        painelBotoes.add(painelLinha1);
+        painelBotoes.add(painelLinha2);
+
+        painelSuperior.add(painelBotoes);
+        painelPrincipal.add(painelSuperior, BorderLayout.NORTH);
+
+        painelGrafico = new JPanel() {
             protected void paintComponent(Graphics graphics) {
                 super.paintComponent(graphics);
                 graphics.drawImage(bufferGrafico, 0, 0, null);
             }
         };
-        panelGrafico.setBackground(Color.WHITE);
-        panelGrafico.addMouseListener(new MouseAdapter() {
+        painelGrafico.setBackground(Color.WHITE);
+        painelPrincipal.add(painelGrafico, BorderLayout.CENTER);
+
+        configurarEventosListeners();
+    }
+
+    private void configurarEventosListeners() {
+
+        // Desenhar uma bolinha
+        painelGrafico.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent mouseEvent) {
                 mouseClique(mouseEvent);
             }
         });
-        contentPane.add(panelGrafico, BorderLayout.CENTER);
 
-        checkBoxTreinarModelo = new JCheckBox("Treinar modelo");
-        checkBoxTreinarModelo.setFont(fonte);
-        var painelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        painelInferior.add(checkBoxTreinarModelo);
-        contentPane.add(painelInferior, BorderLayout.SOUTH);
+        // Treinar a rede
+        checkBoxTreinarModelo.addActionListener(e -> {
+            boolean isSelecionado = checkBoxTreinarModelo.isSelected();
 
+            if (isSelecionado && quantidadeBolinhas == TOTAL_BOLINHAS) {
+                isBonecoPalito.setEnabled(true);
+                isNotBonecoPalito.setEnabled(true);
+                // trienar rede ...
+            } else {
+                grupoRaddioButton.clearSelection();
+                isBonecoPalito.setEnabled(false);
+                isNotBonecoPalito.setEnabled(false);
+            }
+        });
 
-        textAreaOutput.setText("Desenhe uma boneco de palito com 20 bolinhas!");
+        // Limpar tela e começar um novo desenho
+        limparDesenho.addActionListener(e -> limparDesenho());
     }
 
     public void mouseClique(MouseEvent mouseEvent) {
@@ -69,7 +133,7 @@ public class InterfaceGrafica extends JFrame {
         adicionarBolinha(mouseEvent);
         repaint();
 
-        textAreaOutput.setText("Bolinha " + quantidadeBolinhas + "/" + TOTAL_BOLINHAS + " desenhada.");
+        textoBolinhasRestantes.setText((quantidadeBolinhas + 1) + " restantes / " + TOTAL_BOLINHAS + " desenhada");
 
         quantidadeBolinhas++;
         if (quantidadeBolinhas == bolinhas.length) {
@@ -85,7 +149,7 @@ public class InterfaceGrafica extends JFrame {
         bolinhas[quantidadeBolinhas] = new Point(x, y);
 
         var graphics = bufferGrafico.getGraphics();
-        graphics.setColor(SwingUtilities.isRightMouseButton(event) ? COR_MARROM : COR_VERDE);
+        graphics.setColor(COR_PRETA);
         graphics.fillOval(x, y, RAIO_BOLINHA * 2, RAIO_BOLINHA * 2);
     }
 
@@ -94,7 +158,22 @@ public class InterfaceGrafica extends JFrame {
         var texto = checkBoxTreinarModelo.isSelected()
                 ? (ehBoneco ? "Resultado - o modelo acertou: um boneco de palito!" : "Resultado - o modelo errou: Não é um boneco de palito!")
                 : (ehBoneco ? "Resultado: um boneco de palito!" : "Resultado: Não é um boneco de palito!");
-        textAreaOutput.setText(texto);
+        textoBolinhasRestantes.setText(texto);
+    }
+
+    private void limparDesenho() {
+        quantidadeBolinhas = 0;
+        Arrays.fill(bolinhas, null);
+
+        Graphics buffer = bufferGrafico.getGraphics();
+        buffer.setColor(Color.WHITE);
+        buffer.fillRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
+        buffer.dispose();
+
+        textoBolinhasRestantes.setText("");
+        grupoRaddioButton.clearSelection();
+
+        painelGrafico.repaint();
     }
 
 }
