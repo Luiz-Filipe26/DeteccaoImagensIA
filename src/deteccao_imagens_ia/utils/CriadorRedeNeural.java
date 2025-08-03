@@ -25,6 +25,10 @@ public class CriadorRedeNeural {
 
     public static RedeNeural criarRede() {
         List<String> linhas = lerArquivoDePesos();
+        if(linhas.isEmpty()) {
+            return null;
+        }
+
         return construirRede(linhas, new RedeNeural());
     }
 
@@ -51,8 +55,8 @@ public class CriadorRedeNeural {
     private static void processarLinha(String linha, RedeNeural redeNeural, Perceptron perceptronAtual) {
         if (linha.matches(LINHA_IGNORAVEL_REGEX)) return;
         if (linha.matches(SEPARADOR_CAMADA_REGEX)) redeNeural.adicionarCamadaVazia();
-        else if (linha.matches(PESOS_REGEX)) perceptronAtual.adicionarPesos(extrairPesos(linha));
-        else if (linha.matches(VIES_REGEX)) perceptronAtual.adicionarVies(extrairVies(linha));
+        else if (linha.matches(PESOS_REGEX)) perceptronAtual.setPesos(extrairPesos(linha));
+        else if (linha.matches(VIES_REGEX)) perceptronAtual.setVies(extrairVies(linha));
         else throw new IllegalArgumentException("Linha não reconhecida: " + linha);
     }
 

@@ -15,46 +15,39 @@ public class AvaliadorDesenho {
 
     private RedeNeural criarRedeNeuralValida() {
         var rede = CriadorRedeNeural.criarRede();
-        if (!rede.validarRede())
+        if(rede == null) {
+            throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
+        }
+
+        if (rede.ehRedeInvalida())
             throw new IllegalStateException("A Rede Neural não é válida!");
         return rede;
     }
 
-    private int[] encontrarDimensoesDesenho(Point[] bolinhas) {
+    private Rectangle encontrarAreaDesenho(Point[] bolinhas) {
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
         int maxY = Integer.MIN_VALUE;
 
-        for (Point p : bolinhas) {
-            if (p.x < minX) minX = p.x;
-            if (p.y < minY) minY = p.y;
-            if (p.x > maxX) maxX = p.x;
-            if (p.y > maxY) maxY = p.y;
+        for (var bolinha : bolinhas) {
+            if (bolinha.x < minX) minX = bolinha.x;
+            if (bolinha.y < minY) minY = bolinha.y;
+            if (bolinha.x > maxX) maxX = bolinha.x;
+            if (bolinha.y > maxY) maxY = bolinha.y;
         }
 
-        int larguraDesenho = maxX - minX;
-        int alturaDesenho = maxY - minY;
-
-        return new int[] {minX, minY, larguraDesenho, alturaDesenho};
+        return new Rectangle(minX, minY, maxX - minX, maxY-minY);
     }
 
     private double[] calcularEntradas(Point[] bolinhas, int quantidadeEntradas) {
         int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(quantidadeEntradas); // entrada de 50 ou 100
         double[] entradas = new double[quantidadeEntradas];
+        Rectangle areaDesenho = encontrarAreaDesenho(bolinhas);
 
-        int[] novasDimensoesDesenho = encontrarDimensoesDesenho(bolinhas);
-        int minX = novasDimensoesDesenho[0];
-        int minY = novasDimensoesDesenho[1];
-        int larguraDesenho = novasDimensoesDesenho[2];
-        int alturaDesenho = novasDimensoesDesenho[3];
-
-        int larguraCelula = larguraDesenho / tamanhoLadoDoGrid;
-        int alturaCelula = alturaDesenho / tamanhoLadoDoGrid;
-
-        for (var ponto : bolinhas) {
-            int coluna = (ponto.x - minX) / larguraCelula;
-            int linha = (ponto.y - minY) / alturaCelula;
+        for (var bolinha : bolinhas) {
+            int coluna = (bolinha.x - areaDesenho.x) / areaDesenho.width;
+            int linha = (bolinha.y - areaDesenho.y) / areaDesenho.height;
 
             if (!estaDentroDoGrid(linha, coluna, tamanhoLadoDoGrid)) continue;
             int indice = linha * tamanhoLadoDoGrid + coluna;

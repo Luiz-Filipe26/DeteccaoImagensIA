@@ -11,31 +11,33 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
 public class InterfaceGrafica extends JFrame {
-    public static final int LARGURA_JANELA = 600;
-    public static final int ALTURA_JANELA = 800;
+    private static final int LARGURA_JANELA = 600;
+    private static final int ALTURA_JANELA = 800;
     private static final Color COR_PRETA = Color.BLACK;
-    public static final int RAIO_BOLINHA = 30;
-    public static final int TOTAL_BOLINHAS = 20;
+    private static final int RAIO_BOLINHA = 30;
+    private static final int TOTAL_BOLINHAS = 20;
     private final Point[] bolinhas = new Point[TOTAL_BOLINHAS];
     private int quantidadeBolinhas;
-    private final BufferedImage bufferGrafico = new BufferedImage(LARGURA_JANELA, ALTURA_JANELA, BufferedImage.TYPE_INT_ARGB);
-    private final JLabel textoBolinhasRestantes;
+
     private final static Font fonte = new Font("Arial", Font.PLAIN, 20);
     private final static Font fonteMenor = new Font("Arial", Font.PLAIN, 16);
     private final static Font fonteTitulo = new Font("Arial", Font.BOLD, 24);
-    private final JCheckBox checkBoxTreinarModelo;
-    private final JRadioButton isBonecoPalito;
-    private final JRadioButton isNotBonecoPalito;
-    private final ButtonGroup grupoRaddioButton;
-    private final JButton limparDesenho;
-    private final JPanel painelGrafico;
+
+    private JLabel textoBolinhasRestantes;
+    private JCheckBox checkBoxTreinarModelo;
+    private JButton limparDesenho;
+    private PainelDesenho painelGrafico;
 
     public InterfaceGrafica() {
         setTitle("Desenhador de Boneco de Palito");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(LARGURA_JANELA, ALTURA_JANELA);
         setLocationRelativeTo(null);
+        iniciarComponentes();
+        configurarEventos();
+    }
 
+    private void iniciarComponentes() {
         var painelPrincipal = getContentPane();
         painelPrincipal.setLayout(new BorderLayout());
 
@@ -65,18 +67,7 @@ public class InterfaceGrafica extends JFrame {
         JPanel painelLinha1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         checkBoxTreinarModelo = new JCheckBox("Treinar modelo");
         checkBoxTreinarModelo.setFont(fonteMenor);
-        isBonecoPalito = new JRadioButton("É um boneco de palito");
-        isNotBonecoPalito = new JRadioButton("Não é");
-        grupoRaddioButton = new ButtonGroup();
-        isBonecoPalito.setEnabled(false);
-        isNotBonecoPalito.setEnabled(false);
-        isBonecoPalito.setFont(fonteMenor);
-        isNotBonecoPalito.setFont(fonteMenor);
-        grupoRaddioButton.add(isBonecoPalito);
-        grupoRaddioButton.add(isNotBonecoPalito);
         painelLinha1.add(checkBoxTreinarModelo);
-        painelLinha1.add(isBonecoPalito);
-        painelLinha1.add(isNotBonecoPalito);
         JPanel painelLinha2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         limparDesenho = new JButton("Limpar Desenho");
         limparDesenho.setFont(fonteMenor);
@@ -87,43 +78,16 @@ public class InterfaceGrafica extends JFrame {
         painelSuperior.add(painelBotoes);
         painelPrincipal.add(painelSuperior, BorderLayout.NORTH);
 
-        painelGrafico = new JPanel() {
-            protected void paintComponent(Graphics graphics) {
-                super.paintComponent(graphics);
-                graphics.drawImage(bufferGrafico, 0, 0, null);
-            }
-        };
-        painelGrafico.setBackground(Color.WHITE);
+        painelGrafico = new PainelDesenho(LARGURA_JANELA, ALTURA_JANELA);
         painelPrincipal.add(painelGrafico, BorderLayout.CENTER);
-
-        configurarEventosListeners();
     }
 
-    private void configurarEventosListeners() {
-
-        // Desenhar uma bolinha
+    private void configurarEventos() {
         painelGrafico.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent mouseEvent) {
                 mouseClique(mouseEvent);
             }
         });
-
-        // Treinar a rede
-        checkBoxTreinarModelo.addActionListener(e -> {
-            boolean isSelecionado = checkBoxTreinarModelo.isSelected();
-
-            if (isSelecionado && quantidadeBolinhas == TOTAL_BOLINHAS) {
-                isBonecoPalito.setEnabled(true);
-                isNotBonecoPalito.setEnabled(true);
-                // trienar rede ...
-            } else {
-                grupoRaddioButton.clearSelection();
-                isBonecoPalito.setEnabled(false);
-                isNotBonecoPalito.setEnabled(false);
-            }
-        });
-
-        // Limpar tela e começar um novo desenho
         limparDesenho.addActionListener(e -> limparDesenho());
     }
 
@@ -131,11 +95,10 @@ public class InterfaceGrafica extends JFrame {
         if (quantidadeBolinhas >= bolinhas.length) return;
 
         adicionarBolinha(mouseEvent);
-        repaint();
-
-        textoBolinhasRestantes.setText((quantidadeBolinhas + 1) + " restantes / " + TOTAL_BOLINHAS + " desenhada");
 
         quantidadeBolinhas++;
+        textoBolinhasRestantes.setText(quantidadeBolinhas + " / " + TOTAL_BOLINHAS + " desenhadas");
+
         if (quantidadeBolinhas == bolinhas.length) {
             var avaliadorDesenho = new AvaliadorDesenho();
             var resultado = avaliadorDesenho.analisarDesenho(bolinhas);
@@ -148,9 +111,10 @@ public class InterfaceGrafica extends JFrame {
         int y = event.getY() - RAIO_BOLINHA;
         bolinhas[quantidadeBolinhas] = new Point(x, y);
 
-        var graphics = bufferGrafico.getGraphics();
+        var graphics = painelGrafico.getDesenhoGraphics();
         graphics.setColor(COR_PRETA);
         graphics.fillOval(x, y, RAIO_BOLINHA * 2, RAIO_BOLINHA * 2);
+        repaint();
     }
 
     public void mostrarResultado(ResultadoClassificacao resultado) {
@@ -165,13 +129,11 @@ public class InterfaceGrafica extends JFrame {
         quantidadeBolinhas = 0;
         Arrays.fill(bolinhas, null);
 
-        Graphics buffer = bufferGrafico.getGraphics();
-        buffer.setColor(Color.WHITE);
-        buffer.fillRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
-        buffer.dispose();
+        var graphics = painelGrafico.getDesenhoGraphics();
+        graphics.setColor(Color.WHITE);
+        graphics.fillRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
 
         textoBolinhasRestantes.setText("");
-        grupoRaddioButton.clearSelection();
 
         painelGrafico.repaint();
     }

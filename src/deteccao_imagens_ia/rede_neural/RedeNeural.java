@@ -4,8 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RedeNeural {
-    private final List<Camada> camadas = new ArrayList<>();
     private static final double LIMIAR = 0.5;
+    private static final double TAXA_APRENDIZADO_PADRAO = 0.5;
+
+    private final List<Camada> camadas = new ArrayList<>();
+    private double taxaAprendizado;
+
+    public RedeNeural() {
+        this.taxaAprendizado = TAXA_APRENDIZADO_PADRAO;
+    }
 
     public void adicionarCamada(Camada camada) {
         camadas.add(camada);
@@ -19,60 +26,121 @@ public class RedeNeural {
         return camadas.get(camadas.size() - 1);
     }
 
-    public boolean validarRede() {
-        if (camadas.isEmpty())
-            return false;
-
-        if(camadas.stream().anyMatch(Camada::isEmpty)) {
-            return false;
-        }
-
-        for (int i = 0; i < camadas.size(); i++) {
-            var camada = camadas.get(i);
-
-            int entradasEsperadas = camada.getNumeroEntradas();
-
-            for (var perceptron : camada) {
-                if (perceptron.ehInvalido() || perceptron.getNumeroPesos() != entradasEsperadas)
-                    return false;
-            }
-
-            if (i > 0) {
-                int saidaAnterior = camadas.get(i - 1).size();
-                if (entradasEsperadas != saidaAnterior)
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
     public int getTamanhoEntrada() {
         return camadas.get(0).getNumeroEntradas();
     }
 
-    public ResultadoClassificacao detectar(double[] entrada) {
-        double[] saida = calcularSaida(entrada);
-
-        if(saida.length != 1) {
-            throw new IllegalArgumentException("A saída da rede neural deve ter só 1 valor!");
+    public boolean ehRedeInvalida() {
+        if (camadas.isEmpty()) return true;
+        if (camadas.stream().anyMatch(Camada::isEmpty)) return true;
+        for (int i = 0; i < camadas.size(); i++) {
+            var camada = camadas.get(i);
+            var camadaAnterior = i == 0 ? null : camadas.get(i - 1);
+            if (!ehCamadaConsistente(camada, camadaAnterior)) return true;
         }
+        return false;
+    }
 
+    private boolean ehCamadaConsistente(Camada camada, Camada camadaAnterior) {
+        int entradasEsperadas = camada.getNumeroEntradas();
+        for (var perceptron : camada) {
+            if (perceptron.ehInvalido() || perceptron.getNumeroPesos() != entradasEsperadas) return false;
+        }
+        return camadaAnterior == null || entradasEsperadas == camadaAnterior.size();
+    }
+
+    public void treinar(double[] entrada, double[] esperado) {
+        validarTreino(entrada, esperado);
+        var historicoDeAtivacao = calcularSaidas(entrada);
+        double[][] deltas = inicializarDeltas();
+        calcularDeltasCamadaSaida(historicoDeAtivacao, deltas, esperado);
+        calcularDeltasCamadasOcultas(historicoDeAtivacao, deltas);
+        aplicarDeltas(historicoDeAtivacao, deltas, entrada);
+    }
+
+    public ResultadoClassificacao detectar(double[] entrada) {
+        double[] saida = calcularSaidas(entrada).getSaidaRedeAtivada();
+        if (saida.length != 1) throw new IllegalArgumentException("A saída da rede neural deve ter só 1 valor!");
         return saida[0] > LIMIAR ? ResultadoClassificacao.DESENHO_ESPERADO : ResultadoClassificacao.DESENHO_NAO_ESPERADO;
     }
 
-    private double[] calcularSaida(double[] entrada) {
+    private HistoricoDeAtivacao calcularSaidas(double[] entrada) {
+        var historicoDeAtivacao = new HistoricoDeAtivacao();
         double[] saidaAtual = entrada;
+        for (var camada : camadas)
+            saidaAtual = calcularSaidaCamada(historicoDeAtivacao, camada, saidaAtual);
+        return historicoDeAtivacao;
+    }
 
-        for (var camada : camadas) {
-            double[] novaSaida = new double[camada.size()];
-            for (int i = 0; i < camada.size(); i++) {
-                var perceptron = camada.get(i);
-                novaSaida[i] = perceptron.calcularSaida(saidaAtual);
-            }
-            saidaAtual = novaSaida;
+    private double[] calcularSaidaCamada(HistoricoDeAtivacao historicoDeAtivacao, Camada camada, double[] saidaAtual) {
+        List<SaidasNeuronio> saidasNeuronios = new ArrayList<>(camada.size());
+        for (var perceptron : camada)
+            saidasNeuronios.add(perceptron.calcularSaida(saidaAtual));
+        historicoDeAtivacao.addSaidasCamada(saidasNeuronios);
+        return historicoDeAtivacao.getSaidaAtivadaUltimaCamada();
+    }
+
+    private void validarTreino(double[] entrada, double[] esperado) {
+        var camadaSaida = camadas.get(camadas.size() - 1);
+        if (esperado.length != camadaSaida.size())
+            throw new IllegalArgumentException("Tamanho do vetor esperado não corresponde ao da camada de saída.");
+        if(ehRedeInvalida())
+            throw new IllegalArgumentException("A Rede Neural não é válida!");
+    }
+
+    private double[][] inicializarDeltas() {
+        var deltas = new double[camadas.size()][];
+        for (int camadaIndex = 0; camadaIndex < camadas.size(); camadaIndex++)
+            deltas[camadaIndex] = new double[camadas.get(camadaIndex).size()];
+        return deltas;
+    }
+
+    private void calcularDeltasCamadaSaida(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double esperado[]) {
+        int camadaSaidaIndex = camadas.size() - 1;
+        var saidasCamadaAtivacao = historicoDeAtivacao.saidasAntesDeAtivar().get(camadaSaidaIndex);
+        for (int neuronioIndex = 0; neuronioIndex < saidasCamadaAtivacao.length; neuronioIndex++)
+            deltas[camadaSaidaIndex][neuronioIndex] = calcularDelta(saidasCamadaAtivacao[neuronioIndex], esperado[neuronioIndex]);
+    }
+
+    private double calcularDelta(double saidaAntesDeAtivar, double esperado) {
+        double derivada = AtivacaoSigmoide.derivada(saidaAntesDeAtivar);
+        double saida = AtivacaoSigmoide.ativar(saidaAntesDeAtivar);
+        double erro = esperado - saida;
+        return erro * derivada;
+    }
+
+    private void calcularDeltasCamadasOcultas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas) {
+        for (int camadaIndex = camadas.size() - 2; camadaIndex >= 0; camadaIndex--) {
+            int camadaSucessoraIndex = camadaIndex + 1;
+            var saidasCamada = historicoDeAtivacao.saidasAntesDeAtivar().get(camadaIndex);
+            deltas[camadaIndex] = obterDeltasCamadaOculta(saidasCamada, camadas.get(camadaSucessoraIndex), deltas[camadaSucessoraIndex]);
         }
+    }
 
-        return saidaAtual;
+    private double[] obterDeltasCamadaOculta(double[] saidasAntesDeAtivar, Camada camadaSucessora, double[] deltasSucessora) {
+        double[] deltas = new double[saidasAntesDeAtivar.length];
+        for (int neuronioIndex = 0; neuronioIndex < saidasAntesDeAtivar.length; neuronioIndex++) {
+            double somaErros = calcularSomaErros(neuronioIndex, camadaSucessora, deltasSucessora);
+            deltas[neuronioIndex] = somaErros * AtivacaoSigmoide.derivada(saidasAntesDeAtivar[neuronioIndex]);
+        }
+        return deltas;
+    }
+
+    private double calcularSomaErros(int neuronioIndex, Camada camadaSucessora, double[] deltasCamadaSucessora) {
+        double somaErros = 0.0;
+        for (int neuronioSucessorIndex = 0; neuronioSucessorIndex < camadaSucessora.size(); neuronioSucessorIndex++) {
+            double peso = camadaSucessora.get(neuronioSucessorIndex).getPeso(neuronioIndex);
+            somaErros += deltasCamadaSucessora[neuronioSucessorIndex] * peso;
+        }
+        return somaErros;
+    }
+
+    private void aplicarDeltas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] entrada) {
+        for (int camadaIndex = 0; camadaIndex < camadas.size(); camadaIndex++) {
+            var camada = camadas.get(camadaIndex);
+            double[] entradas = (camadaIndex == 0) ? entrada : historicoDeAtivacao.saidasAtivadas().get(camadaIndex - 1);
+            for (int neuronioIndex = 0; neuronioIndex < camada.size(); neuronioIndex++)
+                camada.get(neuronioIndex).atualizarPesos(entradas, taxaAprendizado, deltas[camadaIndex][neuronioIndex]);
+        }
     }
 }

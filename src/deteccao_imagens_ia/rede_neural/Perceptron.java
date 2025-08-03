@@ -13,11 +13,19 @@ public class Perceptron {
         this.vies = vies;
     }
 
-    public void adicionarPesos(double[] pesos) {
+    public void setPesos(double[] pesos) {
         this.pesos = pesos;
     }
-    public void adicionarVies(double vies) {
+    public void setVies(double vies) {
         this.vies = vies;
+    }
+
+    public double getPeso(int index) {
+        return pesos[index];
+    }
+
+    public double getVies() {
+        return vies;
     }
 
     public int getNumeroPesos() {
@@ -27,18 +35,22 @@ public class Perceptron {
         return pesos.length;
     }
 
+    public void atualizarPesos(double[] entradas, double taxaAprendizado, double erro) {
+        for (int i = 0; i < pesos.length; i++)
+            pesos[i] += taxaAprendizado * erro * entradas[i];
+
+        vies += taxaAprendizado * erro;
+    }
+
     public boolean ehInvalido() {
         return pesos == null || pesos.length == 0 || vies == null;
     }
 
-    public double calcularSaida(double[] entradas) {
-        if (entradas.length != pesos.length)
-            throw new IllegalArgumentException("Número incorreto de entradas");
-
+    public SaidasNeuronio calcularSaida(double[] entradas) {
         double soma = vies;
-        for (int i = 0; i < pesos.length; i++)
+        for (int i = 0; i < entradas.length; i++)
             soma += entradas[i] * pesos[i];
 
-        return AtivacaoSigmoide.ativar(soma);
+        return new SaidasNeuronio(soma, AtivacaoSigmoide.ativar(soma));
     }
 }
