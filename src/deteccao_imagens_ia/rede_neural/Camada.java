@@ -7,8 +7,8 @@ public class Camada extends ArrayList<Perceptron> implements Cloneable {
     @Override
     public Camada clone() {
         Camada clone = new Camada();
-        for (Perceptron p : this)
-            clone.add(p.clone());
+        for (var perceptron : this)
+            clone.add(perceptron.clone());
         return clone;
     }
 

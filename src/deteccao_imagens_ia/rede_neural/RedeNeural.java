@@ -18,7 +18,7 @@ public class RedeNeural implements Cloneable {
     public RedeNeural clone() {
         RedeNeural clone = new RedeNeural();
         clone.taxaAprendizado = this.taxaAprendizado;
-        for (Camada camada : this.camadas)
+        for (var camada : this.camadas)
             clone.camadas.add(camada.clone());
         return clone;
     }

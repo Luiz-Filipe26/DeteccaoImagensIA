@@ -8,27 +8,27 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
 
 public class PersistenciaRedeNeural {
 
     private static final String PASTA_ARQUIVO = "IA-Desenho";
     private static final String NOME_ARQUIVO = "pesos_rede.txt";
-    private static final Path CAMINHO_ARQUIVO = resolverCaminho();
+    private static final Path CAMINHO_ARQUIVO = resolverCaminho(PASTA_ARQUIVO, NOME_ARQUIVO);
+    private static final int PRECISAO_DECIMAL = 10;
+    private static final FormatadorDecimal formatadorDecimal = new FormatadorDecimal(PRECISAO_DECIMAL);
 
-    private static final String PESOS_PREFIX = "pesos:";
-    private static final String VIES_PREFIX = "viés:";
-    private static final String COMENTARIO_PREFIX = "#";
-    private static final String SEPARADOR_CAMADA_PREFIX = "---";
+    private static final String PESOS_PREFIXO = "pesos:";
+    private static final String VIES_PREFIXO = "viés:";
+    private static final String COMENTARIO_PREFIXO = "#";
+    private static final String SEPARADOR_CAMADA_PREFIXO = "---";
+    private static final String SEPARADOR_PESO_OU_VIES = " ";
 
     private static final String DECIMAL_REGEX = "-?\\d+(\\.\\d+)?";
-    private static final String SEPARADOR_CAMADA_REGEX = SEPARADOR_CAMADA_PREFIX + ".+";
-    private static final String LINHA_IGNORAVEL_REGEX = "(\\s+)|(" + COMENTARIO_PREFIX + ".+)";
+    private static final String SEPARADOR_CAMADA_REGEX = SEPARADOR_CAMADA_PREFIXO + ".+";
+    private static final String LINHA_IGNORAVEL_REGEX = "(\\s+)|(" + COMENTARIO_PREFIXO + ".+)";
     private static final String PESOS_REGEX = "pesos:\\s*" + DECIMAL_REGEX + "(\\s+" + DECIMAL_REGEX + ")*";
-    private static final String VIES_REGEX = VIES_PREFIX + "\\s*" + DECIMAL_REGEX;
+    private static final String VIES_REGEX = VIES_PREFIXO + "\\s*" + DECIMAL_REGEX;
 
 
     public static List<String> lerArquivoDePesos() {
@@ -41,16 +41,16 @@ public class PersistenciaRedeNeural {
         }
     }
 
-    private static Path resolverCaminho() {
+    private static Path resolverCaminho(String pastaArquivo, String nomeArquivo) {
         String appData = System.getenv("APPDATA");
         String pastaRaiz = (appData != null && !appData.isBlank()) ? appData : System.getProperty("user.home");
-        var pasta = Path.of(pastaRaiz, PASTA_ARQUIVO);
+        var pasta = Path.of(pastaRaiz, pastaArquivo);
         try {
             Files.createDirectories(pasta);
         } catch (IOException e) {
             throw new RuntimeException("Não foi possível criar diretório para salvar pesos: " + pasta, e);
         }
-        return pasta.resolve(NOME_ARQUIVO);
+        return pasta.resolve(nomeArquivo);
     }
 
     public static RedeNeural construirRede(List<String> linhas, RedeNeural redeNeural) {
@@ -78,38 +78,51 @@ public class PersistenciaRedeNeural {
     }
 
     private static double[] extrairPesos(String linha) {
-        var pesosStr = linha.substring(PESOS_PREFIX.length()).trim().split("\\s+");
-        var pesos = new double[pesosStr.length];
-        for (int i = 0; i < pesosStr.length; i++)
-            pesos[i] = Double.parseDouble(pesosStr[i]);
+        var pesosString = linha.substring(PESOS_PREFIXO.length()).trim().split("\\s+");
+        var pesos = new double[pesosString.length];
+        for (int i = 0; i < pesosString.length; i++)
+            pesos[i] = Double.parseDouble(pesosString[i]);
         return pesos;
     }
 
     private static Double extrairVies(String linha) {
-        return Double.parseDouble(linha.substring(VIES_PREFIX.length()).trim());
+        return Double.parseDouble(linha.substring(VIES_PREFIXO.length()).trim());
     }
 
     public static void salvarRede(RedeNeural redeNeural) throws IOException {
         List<String> linhas = new ArrayList<>();
         for (int i = 0; i < redeNeural.getNumeroCamadas(); i++) {
-            if (i > 0) linhas.add(SEPARADOR_CAMADA_PREFIX + " Camada " + i);
+            if (i > 0) linhas.add(SEPARADOR_CAMADA_PREFIXO + " Camada " + i);
             criarCamadaLinhas(redeNeural.getCamada(i), linhas);
         }
-        Files.write(CAMINHO_ARQUIVO, linhas);
-    }
+        Files.write(CAMINHO_ARQUIVO, linhas);}
 
     private static void criarCamadaLinhas(Camada camada, List<String> linhas) {
+        var stringBuilder = inicializarStringBuilder(camada);
         for (var neuronio : camada) {
-            String pesosStr = Arrays.stream(neuronio.getPesos())
-                    .mapToObj(PersistenciaRedeNeural::formatarDecimal)
-                    .collect(Collectors.joining(" "));
-            linhas.add(PESOS_PREFIX + " " + pesosStr);
-            linhas.add(VIES_PREFIX + " " + formatarDecimal(neuronio.getVies()));
+            stringBuilder.setLength(0);
+            linhas.add(criarPesosLinha(neuronio, stringBuilder));
+            linhas.add(criarViesLinha(neuronio));
         }
     }
 
-    private static String formatarDecimal(double decimal) {
-        var formatado = String.format(Locale.US, "%.10f", decimal);
-        return formatado.replaceAll("0+$", "").replaceAll("\\.$", "");
+    private static StringBuilder inicializarStringBuilder(Camada camada) {
+        int numeroPesos = camada.get(0).getPesos().length;
+        int capacidadeEstimada = numeroPesos * (PRECISAO_DECIMAL + FormatadorDecimal.SINAL_E_SEPARADOR_DECIMAL_TAMANHO + SEPARADOR_PESO_OU_VIES.length());
+        return new StringBuilder(capacidadeEstimada);
+    }
+
+    private static String criarPesosLinha(Perceptron neuronio, StringBuilder stringBuilder) {
+        var pesos = neuronio.getPesos();
+        stringBuilder.append(formatadorDecimal.formatar(pesos[0]));
+        for (int i = 1; i < pesos.length; i++) {
+            stringBuilder.append(' ');
+            stringBuilder.append(formatadorDecimal.formatar(pesos[i]));
+        }
+        return PESOS_PREFIXO + SEPARADOR_PESO_OU_VIES + stringBuilder;
+    }
+
+    private static String criarViesLinha(Perceptron neuronio) {
+        return VIES_PREFIXO + SEPARADOR_PESO_OU_VIES + formatadorDecimal.formatar(neuronio.getVies());
     }
 }
