@@ -16,11 +16,11 @@ public class RedeNeural implements Cloneable {
 
     @Override
     public RedeNeural clone() {
-        try {
-            return (RedeNeural) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+        RedeNeural clone = new RedeNeural();
+        clone.taxaAprendizado = this.taxaAprendizado;
+        for (Camada camada : this.camadas)
+            clone.camadas.add(camada.clone());
+        return clone;
     }
 
     public void adicionarCamada(Camada camada) {
@@ -37,6 +37,14 @@ public class RedeNeural implements Cloneable {
 
     public int getTamanhoEntrada() {
         return camadas.get(0).getNumeroEntradas();
+    }
+
+    public int getNumeroCamadas() {
+        return camadas.size();
+    }
+
+    public Camada getCamada(int index) {
+        return camadas.get(index);
     }
 
     public boolean ehRedeInvalida() {

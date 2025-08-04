@@ -4,97 +4,30 @@ import deteccao_imagens_ia.rede_neural.Perceptron;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 
 import java.awt.*;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 public class CriadorRedeNeural {
-
-    private static final String CAMINHO_ARQUIVO = "pesos_rede.txt";
-
-    public static final int QUANTIDADE_ENTRADAS_PADRAO = 2500;
-
-    private static final String PESOS_PREFIX = "pesos:";
-    private static final String VIES_PREFIX = "viés:";
-    private static final String COMENTARIO_PREFIX = "#";
-    private static final String SEPARADOR_CAMADA_PREFIX = "---";
-
-    private static final String DECIMAL_REGEX = "\\d+(\\.\\d+)?";
-    private static final String SEPARADOR_CAMADA_REGEX = SEPARADOR_CAMADA_PREFIX + ".+";
-    private static final String LINHA_IGNORAVEL_REGEX = "(\\s+)|(" + COMENTARIO_PREFIX + ".+)";
-    private static final String PESOS_REGEX = "pesos:\\s*" + DECIMAL_REGEX + "(\\s+" + DECIMAL_REGEX + ")*";
-    private static final String VIES_REGEX = VIES_PREFIX + "\\s*" + DECIMAL_REGEX;
+    private static final int TAMANHO_CAMADA_ENTRADA = 2500;
+    private static final int TAMANHO_CAMADA_OCULTA_1 = 100;
+    private static final int TAMANHO_CAMADA_OCULTA_2 = 30;
+    private static final int TAMANHO_CAMADA_SAIDA = 1;
 
     public static RedeNeural criarRede() {
-        List<String> linhas = lerArquivoDePesos();
-        if(linhas.isEmpty()) {
+        List<String> linhas = PersistenciaRedeNeural.lerArquivoDePesos();
+        if (linhas.isEmpty())
             return null;
-        }
-
-        return construirRede(linhas, new RedeNeural());
-    }
-
-    private static List<String> lerArquivoDePesos() {
-        try {
-            var linhas = Files.readAllLines(Path.of(CAMINHO_ARQUIVO));
-            return linhas.stream().map(String::trim).toList();
-        } catch (IOException e) {
-            System.err.println("Erro ao ler o arquivo de pesos: " + e.getMessage());
-            return List.of();
-        }
-    }
-
-    private static RedeNeural construirRede(List<String> linhas, RedeNeural redeNeural) {
-        redeNeural.adicionarCamadaVazia();
-        var perceptronAtual = new Perceptron();
-        for (var linha : linhas) {
-            processarLinha(linha, redeNeural, perceptronAtual);
-            perceptronAtual = pegarPerceptronAtual(redeNeural, perceptronAtual);
-        }
-        return redeNeural;
-    }
-
-    private static void processarLinha(String linha, RedeNeural redeNeural, Perceptron perceptronAtual) {
-        if (linha.matches(LINHA_IGNORAVEL_REGEX)) return;
-        if (linha.matches(SEPARADOR_CAMADA_REGEX)) redeNeural.adicionarCamadaVazia();
-        else if (linha.matches(PESOS_REGEX)) perceptronAtual.setPesos(extrairPesos(linha));
-        else if (linha.matches(VIES_REGEX)) perceptronAtual.setVies(extrairVies(linha));
-        else throw new IllegalArgumentException("Linha não reconhecida: " + linha);
-    }
-
-    private static Perceptron pegarPerceptronAtual(RedeNeural redeNeural, Perceptron perceptronAtual) {
-        if (perceptronAtual.ehInvalido()) return perceptronAtual;
-        redeNeural.getUltimaCamada().add(perceptronAtual);
-        return new Perceptron();
-    }
-
-    private static double[] extrairPesos(String linha) {
-        var pesosStr = linha.substring(PESOS_PREFIX.length()).trim().split("\\s+");
-        var pesos = new double[pesosStr.length];
-        for (int i = 0; i < pesosStr.length; i++)
-            pesos[i] = Double.parseDouble(pesosStr[i]);
-        return pesos;
-    }
-
-    private static Double extrairVies(String linha) {
-        return Double.parseDouble(linha.substring(VIES_PREFIX.length()).trim());
+        return PersistenciaRedeNeural.construirRede(linhas, new RedeNeural());
     }
 
     public static RedeNeural criarRedePelaEntrada(AvaliadorDesenho avaliadorDesenho, List<Point> bolinhas) {
-        double[] entrada = avaliadorDesenho.calcularEntrada(bolinhas, QUANTIDADE_ENTRADAS_PADRAO);
+        double[] entrada = avaliadorDesenho.calcularEntrada(bolinhas, TAMANHO_CAMADA_ENTRADA);
         var redeNeural = criarRedeNeuralVazia(obterTamanhoPorCamada());
         redeNeural.forcarAprendizado(entrada);
         return redeNeural;
     }
 
     private static List<Integer> obterTamanhoPorCamada() {
-        return List.of(
-                QUANTIDADE_ENTRADAS_PADRAO, // Camada de entrada
-                100,                         // Primeira camada oculta
-                30,                          // Segunda camada oculta
-                1                            // Camada de saída
-        );
+        return List.of(TAMANHO_CAMADA_ENTRADA, TAMANHO_CAMADA_OCULTA_1, TAMANHO_CAMADA_OCULTA_2, TAMANHO_CAMADA_SAIDA);
     }
 
     private static RedeNeural criarRedeNeuralVazia(List<Integer> tamanhosPorCamada) {

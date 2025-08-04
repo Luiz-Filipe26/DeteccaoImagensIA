@@ -4,29 +4,38 @@ import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 public class AvaliadorDesenho {
 
     public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
-        var rede = criarRedeNeuralValida(bolinhas, treinarModelo);
-        var entrada = calcularEntrada(bolinhas, rede.getTamanhoEntrada());
-        var resultado = rede.detectar(entrada);
-        if(resultado != ResultadoClassificacao.DESENHO_ESPERADO)
-            rede.treinar(entrada, new double[]{1.0});
-        return rede.detectar(entrada);
+        var redeNeural = criarRedeNeuralValida(bolinhas, treinarModelo);
+        var entrada = calcularEntrada(bolinhas, redeNeural.getTamanhoEntrada());
+        if(treinarModelo) {
+            redeNeural.treinar(entrada, new double[]{1.0});
+            salvarRede(redeNeural, entrada);
+        }
+        return redeNeural.detectar(entrada);
     }
 
+    private void salvarRede(RedeNeural redeNeural, double[] entrada) {
+        try {
+            PersistenciaRedeNeural.salvarRede(redeNeural);
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar pesos: " + e.getMessage());
+        }
+    }
 
     private RedeNeural criarRedeNeuralValida(List<Point> bolinhas, boolean treinarModelo) {
-        var rede = CriadorRedeNeural.criarRede();
-        if(rede == null && treinarModelo)
-            rede = CriadorRedeNeural.criarRedePelaEntrada(this, bolinhas);
-        if(rede == null)
+        var redeNeural = CriadorRedeNeural.criarRede();
+        if(redeNeural == null && treinarModelo)
+            redeNeural = CriadorRedeNeural.criarRedePelaEntrada(this, bolinhas);
+        if(redeNeural == null)
             throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
-        if (rede.ehRedeInvalida())
+        if (redeNeural.ehRedeInvalida())
             throw new IllegalStateException("A Rede Neural não é válida!");
-        return rede;
+        return redeNeural;
     }
 
     private Rectangle encontrarAreaDesenho(List<Point> bolinhas) {

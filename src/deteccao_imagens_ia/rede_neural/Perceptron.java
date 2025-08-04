@@ -1,6 +1,6 @@
 package deteccao_imagens_ia.rede_neural;
 
-public class Perceptron {
+public class Perceptron implements Cloneable {
     private double[] pesos;
     private Double vies;
 
@@ -13,6 +13,14 @@ public class Perceptron {
         this.vies = vies;
     }
 
+    @Override
+    public Perceptron clone() {
+        Perceptron clone = new Perceptron();
+        clone.pesos = pesos.clone();
+        clone.vies = vies;
+        return clone;
+    }
+
     public void setPesos(double[] pesos) {
         this.pesos = pesos;
     }
@@ -22,6 +30,10 @@ public class Perceptron {
 
     public double getPeso(int index) {
         return pesos[index];
+    }
+
+    public double[] getPesos() {
+        return pesos;
     }
 
     public double getVies() {
