@@ -22,4 +22,12 @@ public class PainelDesenho extends JPanel {
         super.paintComponent(graphics);
         graphics.drawImage(bufferGrafico, 0, 0, null);
     }
+
+    public void adicionarBolinha(int xCentral, int yCentral, int raio, Color cor) {
+        int x = xCentral - raio;
+        int y = yCentral - raio;
+        desenhoGraphics.setColor(cor);
+        desenhoGraphics.fillOval(x, y, raio * 2, raio * 2);
+        repaint();
+    }
 }

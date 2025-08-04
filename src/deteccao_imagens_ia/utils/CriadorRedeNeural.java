@@ -3,6 +3,7 @@ package deteccao_imagens_ia.utils;
 import deteccao_imagens_ia.rede_neural.Perceptron;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,8 @@ import java.util.List;
 public class CriadorRedeNeural {
 
     private static final String CAMINHO_ARQUIVO = "pesos_rede.txt";
+
+    public static final int QUANTIDADE_ENTRADAS_PADRAO = 2500;
 
     private static final String PESOS_PREFIX = "pesos:";
     private static final String VIES_PREFIX = "viés:";
@@ -76,5 +79,41 @@ public class CriadorRedeNeural {
 
     private static Double extrairVies(String linha) {
         return Double.parseDouble(linha.substring(VIES_PREFIX.length()).trim());
+    }
+
+    public static RedeNeural criarRedePelaEntrada(AvaliadorDesenho avaliadorDesenho, List<Point> bolinhas) {
+        double[] entrada = avaliadorDesenho.calcularEntrada(bolinhas, QUANTIDADE_ENTRADAS_PADRAO);
+        var redeNeural = criarRedeNeuralVazia(obterTamanhoPorCamada());
+        redeNeural.forcarAprendizado(entrada);
+        return redeNeural;
+    }
+
+    private static List<Integer> obterTamanhoPorCamada() {
+        return List.of(
+                QUANTIDADE_ENTRADAS_PADRAO, // Camada de entrada
+                100,                         // Primeira camada oculta
+                30,                          // Segunda camada oculta
+                1                            // Camada de saída
+        );
+    }
+
+    private static RedeNeural criarRedeNeuralVazia(List<Integer> tamanhosPorCamada) {
+        var redeNeural = new RedeNeural();
+        for (int tamanhoIndex = 1; tamanhoIndex < tamanhosPorCamada.size(); tamanhoIndex++) {
+            int entradasPorNeuronio = tamanhosPorCamada.get(tamanhoIndex - 1);
+            int quantidadeNeuronios = tamanhosPorCamada.get(tamanhoIndex);
+            criarCamadaVazia(redeNeural, quantidadeNeuronios, entradasPorNeuronio);
+        }
+        return redeNeural;
+    }
+
+    private static void criarCamadaVazia(RedeNeural redeNeural, int quantidadeNeuronios, int entradasPorNeuronio) {
+        redeNeural.adicionarCamadaVazia();
+        for (int neuronioIndex = 0; neuronioIndex < quantidadeNeuronios; neuronioIndex++) {
+            var perceptron = new Perceptron();
+            perceptron.setPesos(new double[entradasPorNeuronio]);
+            perceptron.setVies(0.0);
+            redeNeural.getUltimaCamada().add(perceptron);
+        }
     }
 }

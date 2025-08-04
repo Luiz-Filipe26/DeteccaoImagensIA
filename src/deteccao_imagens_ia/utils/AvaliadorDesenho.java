@@ -4,27 +4,32 @@ import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 
 import java.awt.*;
+import java.util.List;
 
 public class AvaliadorDesenho {
 
-    public ResultadoClassificacao analisarDesenho(Point[] bolinhas) {
-        var rede = criarRedeNeuralValida();
-        var entradas = calcularEntradas(bolinhas, rede.getTamanhoEntrada());
-        return rede.detectar(entradas);
+    public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
+        var rede = criarRedeNeuralValida(bolinhas, treinarModelo);
+        var entrada = calcularEntrada(bolinhas, rede.getTamanhoEntrada());
+        var resultado = rede.detectar(entrada);
+        if(resultado != ResultadoClassificacao.DESENHO_ESPERADO)
+            rede.treinar(entrada, new double[]{1.0});
+        return rede.detectar(entrada);
     }
 
-    private RedeNeural criarRedeNeuralValida() {
-        var rede = CriadorRedeNeural.criarRede();
-        if(rede == null) {
-            throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
-        }
 
+    private RedeNeural criarRedeNeuralValida(List<Point> bolinhas, boolean treinarModelo) {
+        var rede = CriadorRedeNeural.criarRede();
+        if(rede == null && treinarModelo)
+            rede = CriadorRedeNeural.criarRedePelaEntrada(this, bolinhas);
+        if(rede == null)
+            throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
         if (rede.ehRedeInvalida())
             throw new IllegalStateException("A Rede Neural não é válida!");
         return rede;
     }
 
-    private Rectangle encontrarAreaDesenho(Point[] bolinhas) {
+    private Rectangle encontrarAreaDesenho(List<Point> bolinhas) {
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
@@ -40,21 +45,20 @@ public class AvaliadorDesenho {
         return new Rectangle(minX, minY, maxX - minX, maxY-minY);
     }
 
-    private double[] calcularEntradas(Point[] bolinhas, int quantidadeEntradas) {
+    public double[] calcularEntrada(List<Point> bolinhas, int quantidadeEntradas) {
         int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(quantidadeEntradas); // entrada de 50 ou 100
-        double[] entradas = new double[quantidadeEntradas];
+        double[] entrada = new double[quantidadeEntradas];
         Rectangle areaDesenho = encontrarAreaDesenho(bolinhas);
 
         for (var bolinha : bolinhas) {
-            int coluna = (bolinha.x - areaDesenho.x) / areaDesenho.width;
-            int linha = (bolinha.y - areaDesenho.y) / areaDesenho.height;
-
+            int coluna = (int)((double)(bolinha.x - areaDesenho.x) / areaDesenho.width * tamanhoLadoDoGrid);
+            int linha = (int)((double)(bolinha.y - areaDesenho.y) / areaDesenho.height * tamanhoLadoDoGrid);
             if (!estaDentroDoGrid(linha, coluna, tamanhoLadoDoGrid)) continue;
             int indice = linha * tamanhoLadoDoGrid + coluna;
-            entradas[indice]++;
+            entrada[indice] += 1.0;
         }
 
-        return entradas;
+        return entrada;
     }
 
     private boolean estaDentroDoGrid(int linha, int coluna, int tamanhoLadoGrid) {

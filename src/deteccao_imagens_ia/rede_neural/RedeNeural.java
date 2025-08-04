@@ -3,7 +3,7 @@ package deteccao_imagens_ia.rede_neural;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RedeNeural {
+public class RedeNeural implements Cloneable {
     private static final double LIMIAR = 0.5;
     private static final double TAXA_APRENDIZADO_PADRAO = 0.5;
 
@@ -12,6 +12,15 @@ public class RedeNeural {
 
     public RedeNeural() {
         this.taxaAprendizado = TAXA_APRENDIZADO_PADRAO;
+    }
+
+    @Override
+    public RedeNeural clone() {
+        try {
+            return (RedeNeural) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
     public void adicionarCamada(Camada camada) {
@@ -49,6 +58,14 @@ public class RedeNeural {
         return camadaAnterior == null || entradasEsperadas == camadaAnterior.size();
     }
 
+    public void forcarAprendizado(double[] entrada) {
+        var redeNeuralClone = clone();
+        redeNeuralClone.taxaAprendizado = 1.0;
+        redeNeuralClone.treinar(entrada, new double[]{1.0});
+        camadas.clear();
+        camadas.addAll(redeNeuralClone.camadas);
+    }
+
     public void treinar(double[] entrada, double[] esperado) {
         validarTreino(entrada, esperado);
         var historicoDeAtivacao = calcularSaidas(entrada);
@@ -72,10 +89,10 @@ public class RedeNeural {
         return historicoDeAtivacao;
     }
 
-    private double[] calcularSaidaCamada(HistoricoDeAtivacao historicoDeAtivacao, Camada camada, double[] saidaAtual) {
+    private double[] calcularSaidaCamada(HistoricoDeAtivacao historicoDeAtivacao, Camada camada, double[] entrada) {
         List<SaidasNeuronio> saidasNeuronios = new ArrayList<>(camada.size());
         for (var perceptron : camada)
-            saidasNeuronios.add(perceptron.calcularSaida(saidaAtual));
+            saidasNeuronios.add(perceptron.calcularSaida(entrada));
         historicoDeAtivacao.addSaidasCamada(saidasNeuronios);
         return historicoDeAtivacao.getSaidaAtivadaUltimaCamada();
     }
@@ -104,8 +121,8 @@ public class RedeNeural {
 
     private double calcularDelta(double saidaAntesDeAtivar, double esperado) {
         double derivada = AtivacaoSigmoide.derivada(saidaAntesDeAtivar);
-        double saida = AtivacaoSigmoide.ativar(saidaAntesDeAtivar);
-        double erro = esperado - saida;
+        double saidaAtivada = AtivacaoSigmoide.ativar(saidaAntesDeAtivar);
+        double erro = esperado - saidaAtivada;
         return erro * derivada;
     }
 
