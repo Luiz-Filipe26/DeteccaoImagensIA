@@ -29,8 +29,10 @@ public class AvaliadorDesenho {
 
     private RedeNeural criarRedeNeuralValida(List<Point> bolinhas, boolean treinarModelo) {
         var redeNeural = CriadorRedeNeural.criarRede();
-        if(redeNeural == null && treinarModelo)
+        if(redeNeural == null && treinarModelo) {
             redeNeural = CriadorRedeNeural.criarRedePelaEntrada(this, bolinhas);
+            System.out.println("Criado arquivo de pesos!");
+        }
         if(redeNeural == null)
             throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
         if (redeNeural.ehRedeInvalida())

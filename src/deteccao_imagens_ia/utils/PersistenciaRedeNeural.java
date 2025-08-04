@@ -27,7 +27,7 @@ public class PersistenciaRedeNeural {
     private static final String DECIMAL_REGEX = "-?\\d+(\\.\\d+)?";
     private static final String SEPARADOR_CAMADA_REGEX = SEPARADOR_CAMADA_PREFIXO + ".+";
     private static final String LINHA_IGNORAVEL_REGEX = "(\\s+)|(" + COMENTARIO_PREFIXO + ".+)";
-    private static final String PESOS_REGEX = "pesos:\\s*" + DECIMAL_REGEX + "(\\s+" + DECIMAL_REGEX + ")*";
+    private static final String PESOS_REGEX = PESOS_PREFIXO + "\\s*" + DECIMAL_REGEX + "[-\\d.\\s]*";
     private static final String VIES_REGEX = VIES_PREFIXO + "\\s*" + DECIMAL_REGEX;
 
 
@@ -36,7 +36,6 @@ public class PersistenciaRedeNeural {
             var linhas = Files.readAllLines(CAMINHO_ARQUIVO);
             return linhas.stream().map(String::trim).toList();
         } catch (Exception e) {
-            System.err.println("Erro ao ler o arquivo de pesos: " + e.getMessage());
             return List.of();
         }
     }

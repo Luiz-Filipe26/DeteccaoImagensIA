@@ -14,8 +14,10 @@ public class CriadorRedeNeural {
 
     public static RedeNeural criarRede() {
         List<String> linhas = PersistenciaRedeNeural.lerArquivoDePesos();
-        if (linhas.isEmpty())
+        if (linhas.isEmpty()) {
+            System.out.println("Arquivo de pesos vazio ou inexistente.");
             return null;
+        }
         return PersistenciaRedeNeural.construirRede(linhas, new RedeNeural());
     }
 
