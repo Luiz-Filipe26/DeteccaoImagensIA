@@ -4,25 +4,36 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
 public class PainelDesenho extends JPanel {
     private static final int RAIO_BOLINHA = 25;
-    private static final Color COR_FUNDO = Color.WHITE;
+    private static final int RAIO_CURSOR = 25;
     private static final Color COR_BOLINHA = Color.BLACK;
+    private static final Color COR_CURSOR = Color.LIGHT_GRAY;
+    private static final Color COR_FUNDO = Color.WHITE;
     private static final int INTERVALO_TIMER_MS = 100;
+    private static final double MINIMO_ESCALA_BOLINHA = 0.1;
+    private static final double MAXIMO_ESCALA_BOLINHA = 3.0;
+    public static final double FATOR_ESCALA_MOUSE = 0.1;
 
     private final BufferedImage bufferGrafico;
-    private final Graphics desenhoGraphics;
+    private final BufferedImage cursorGrafico;
+    private final Graphics2D desenhoGraphics;
+    private final Graphics2D cursorGraphics;
 
     private final Timer timer;
     private final PainelDesenhoListener painelDesenhoListener;
     private Point posicaoMouseAtual;
+    private double escalaBolinha = 1.0;
 
     public PainelDesenho(PainelDesenhoListener painelDesenhoListener, Dimension dimensao) {
         this.painelDesenhoListener = painelDesenhoListener;
         bufferGrafico = new BufferedImage((int) dimensao.getWidth(), (int) dimensao.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        desenhoGraphics = bufferGrafico.getGraphics();
+        cursorGrafico = new BufferedImage((int) dimensao.getWidth(), (int) dimensao.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        desenhoGraphics = (Graphics2D) bufferGrafico.getGraphics();
+        cursorGraphics = (Graphics2D) cursorGrafico.getGraphics();
         limparDesenho();
         timer = criarTimer();
         configurarEventosMouse();
@@ -37,8 +48,11 @@ public class PainelDesenho extends JPanel {
 
     private Timer criarTimer() {
         return new Timer(INTERVALO_TIMER_MS, e -> {
-            if (posicaoMouseAtual != null)
-                adicionarBolinha(posicaoMouseAtual, RAIO_BOLINHA, COR_BOLINHA);
+            var circulo = new CirculoGrafico(posicaoMouseAtual, (int)(RAIO_BOLINHA * escalaBolinha), COR_BOLINHA);
+            circulo.desenhar(desenhoGraphics);
+            desenharCursor(posicaoMouseAtual);
+            repaint();
+            painelDesenhoListener.adicionarBolinha(posicaoMouseAtual);
         });
     }
 
@@ -46,6 +60,7 @@ public class PainelDesenho extends JPanel {
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
         graphics.drawImage(bufferGrafico, 0, 0, null);
+        graphics.drawImage(cursorGrafico, 0, 0, null);
     }
 
     private void configurarEventosMouse() {
@@ -59,14 +74,44 @@ public class PainelDesenho extends JPanel {
             @Override public void mouseReleased(MouseEvent mouseEvent) {
                 mouseSolto(mouseEvent);
             }
+            @Override
+            public void mouseMoved(MouseEvent mouseEvent) {
+                mouseMoveu(mouseEvent);
+            }
         };
         addMouseListener(mouseAdapter);
         addMouseMotionListener(mouseAdapter);
+        addMouseWheelListener(criarMouseWheelListener());
+    }
+
+    private MouseWheelListener criarMouseWheelListener() {
+        return e -> {
+            int notches = e.getWheelRotation();
+            escalaBolinha -= FATOR_ESCALA_MOUSE * notches;
+            if (escalaBolinha < MINIMO_ESCALA_BOLINHA) escalaBolinha = MINIMO_ESCALA_BOLINHA;
+            if (escalaBolinha > MAXIMO_ESCALA_BOLINHA) escalaBolinha = MAXIMO_ESCALA_BOLINHA;
+            desenharCursor(posicaoMouseAtual);
+        };
+    }
+
+    private void desenharCursor(Point ponto) {
+        cursorGraphics.setColor(COR_FUNDO);
+        cursorGraphics.setComposite(AlphaComposite.Clear);
+        cursorGraphics.fillRect(0, 0, cursorGrafico.getWidth(), cursorGrafico.getHeight());
+        cursorGraphics.setComposite(AlphaComposite.SrcOver);
+        new CirculoGrafico(ponto, (int) (RAIO_CURSOR * escalaBolinha), COR_CURSOR).desenhar(cursorGraphics);
+        repaint();
+    }
+
+    private void mouseMoveu(MouseEvent mouseEvent) {
+        posicaoMouseAtual = mouseEvent.getPoint();
+        desenharCursor(posicaoMouseAtual);
     }
 
     private void mouseClicado(MouseEvent mouseEvent) {
         posicaoMouseAtual = mouseEvent.getPoint();
-        adicionarBolinha(posicaoMouseAtual, RAIO_BOLINHA, COR_BOLINHA);
+        new CirculoGrafico(posicaoMouseAtual, (int) (RAIO_BOLINHA * escalaBolinha), COR_BOLINHA).desenhar(desenhoGraphics);
+        painelDesenhoListener.adicionarBolinha(posicaoMouseAtual);
         timer.start();
     }
 
@@ -76,15 +121,6 @@ public class PainelDesenho extends JPanel {
 
     private void mouseSolto(MouseEvent mouseEvent) {
         timer.stop();
-        posicaoMouseAtual = null;
-    }
-
-    public void adicionarBolinha(Point pontoCentral, int raio, Color cor) {
-        int x = (int) pontoCentral.getX() - raio;
-        int y = (int) pontoCentral.getY() - raio;
-        desenhoGraphics.setColor(cor);
-        desenhoGraphics.fillOval(x, y, raio * 2, raio * 2);
-        repaint();
-        painelDesenhoListener.adicionarBolinha(posicaoMouseAtual);
+        posicaoMouseAtual = mouseEvent.getPoint();
     }
 }
