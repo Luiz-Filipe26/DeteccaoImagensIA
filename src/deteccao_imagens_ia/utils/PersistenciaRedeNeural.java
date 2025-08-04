@@ -15,7 +15,7 @@ public class PersistenciaRedeNeural {
     private static final String PASTA_ARQUIVO = "IA-Desenho";
     private static final String NOME_ARQUIVO = "pesos_rede.txt";
     private static final Path CAMINHO_ARQUIVO = resolverCaminho(PASTA_ARQUIVO, NOME_ARQUIVO);
-    private static final int PRECISAO_DECIMAL = 10;
+    private static final int PRECISAO_DECIMAL = 6;
     private static final FormatadorDecimal formatadorDecimal = new FormatadorDecimal(PRECISAO_DECIMAL);
 
     private static final String PESOS_PREFIXO = "pesos:";
