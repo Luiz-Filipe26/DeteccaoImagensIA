@@ -99,7 +99,7 @@ public class PainelDesenho extends JPanel {
         cursorGraphics.setComposite(AlphaComposite.Clear);
         cursorGraphics.fillRect(0, 0, cursorGrafico.getWidth(), cursorGrafico.getHeight());
         cursorGraphics.setComposite(AlphaComposite.SrcOver);
-        new CirculoGrafico(ponto, (int) (RAIO_CURSOR * escalaBolinha), COR_CURSOR).desenhar(cursorGraphics);
+        new CirculoGrafico(ponto, (int) (RAIO_CURSOR * escalaBolinha), COR_CURSOR, CirculoGrafico.Tipo.OCO).desenhar(cursorGraphics);
         repaint();
     }
 
