@@ -14,12 +14,12 @@ public class AvaliadorDesenho {
         var entrada = calcularEntrada(bolinhas, redeNeural.getTamanhoEntrada());
         if(treinarModelo) {
             redeNeural.treinar(entrada, new double[]{1.0});
-            salvarRede(redeNeural, entrada);
+            salvarRede(redeNeural);
         }
         return redeNeural.detectar(entrada);
     }
 
-    private void salvarRede(RedeNeural redeNeural, double[] entrada) {
+    private void salvarRede(RedeNeural redeNeural) {
         try {
             PersistenciaRedeNeural.salvarRede(redeNeural);
         } catch (IOException e) {

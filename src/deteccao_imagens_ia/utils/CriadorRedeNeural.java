@@ -1,5 +1,6 @@
 package deteccao_imagens_ia.utils;
 
+import deteccao_imagens_ia.rede_neural.Camada;
 import deteccao_imagens_ia.rede_neural.Perceptron;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 
@@ -43,7 +44,7 @@ public class CriadorRedeNeural {
     }
 
     private static void criarCamadaVazia(RedeNeural redeNeural, int quantidadeNeuronios, int entradasPorNeuronio) {
-        redeNeural.adicionarCamadaVazia();
+        redeNeural.adicionarCamada(new Camada());
         for (int neuronioIndex = 0; neuronioIndex < quantidadeNeuronios; neuronioIndex++) {
             var perceptron = new Perceptron();
             perceptron.setPesos(new double[entradasPorNeuronio]);

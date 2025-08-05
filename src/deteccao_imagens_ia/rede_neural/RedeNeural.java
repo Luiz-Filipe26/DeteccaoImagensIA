@@ -27,10 +27,6 @@ public class RedeNeural implements Cloneable {
         camadas.add(camada);
     }
 
-    public void adicionarCamadaVazia() {
-        camadas.add(new Camada());
-    }
-
     public Camada getUltimaCamada() {
         return camadas.get(camadas.size() - 1);
     }
@@ -107,6 +103,8 @@ public class RedeNeural implements Cloneable {
 
     private void validarTreino(double[] entrada, double[] esperado) {
         var camadaSaida = camadas.get(camadas.size() - 1);
+        if(entrada.length != this.getTamanhoEntrada())
+            throw new IllegalArgumentException("Tamanho do vetor entrada não corresponde ao da camada de entrada.");
         if (esperado.length != camadaSaida.size())
             throw new IllegalArgumentException("Tamanho do vetor esperado não corresponde ao da camada de saída.");
         if(ehRedeInvalida())
@@ -120,7 +118,7 @@ public class RedeNeural implements Cloneable {
         return deltas;
     }
 
-    private void calcularDeltasCamadaSaida(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double esperado[]) {
+    private void calcularDeltasCamadaSaida(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] esperado) {
         int camadaSaidaIndex = camadas.size() - 1;
         var saidasCamadaAtivacao = historicoDeAtivacao.saidasAntesDeAtivar().get(camadaSaidaIndex);
         for (int neuronioIndex = 0; neuronioIndex < saidasCamadaAtivacao.length; neuronioIndex++)

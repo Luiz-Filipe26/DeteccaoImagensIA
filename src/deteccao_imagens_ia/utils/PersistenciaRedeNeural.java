@@ -53,7 +53,7 @@ public class PersistenciaRedeNeural {
     }
 
     public static RedeNeural construirRede(List<String> linhas, RedeNeural redeNeural) {
-        redeNeural.adicionarCamadaVazia();
+        redeNeural.adicionarCamada(new Camada());
         var perceptronAtual = new Perceptron();
         for (var linha : linhas) {
             processarLinha(linha, redeNeural, perceptronAtual);
@@ -64,7 +64,7 @@ public class PersistenciaRedeNeural {
 
     private static void processarLinha(String linha, RedeNeural redeNeural, Perceptron perceptronAtual) {
         if (linha.matches(LINHA_IGNORAVEL_REGEX)) return;
-        if (linha.matches(SEPARADOR_CAMADA_REGEX)) redeNeural.adicionarCamadaVazia();
+        if (linha.matches(SEPARADOR_CAMADA_REGEX)) redeNeural.adicionarCamada(new Camada());
         else if (linha.matches(PESOS_REGEX)) perceptronAtual.setPesos(extrairPesos(linha));
         else if (linha.matches(VIES_REGEX)) perceptronAtual.setVies(extrairVies(linha));
         else throw new IllegalArgumentException("Linha não reconhecida: " + linha);
