@@ -56,10 +56,9 @@ public class FormatadorDecimal {
         stringBuilderDecimal.append(parteDecimal);
     }
 
-    private StringBuilder removerZerosADireita() {
+    private void removerZerosADireita() {
         int end = stringBuilderDecimal.length();
         while (stringBuilderDecimal.charAt(end - 1) == '0') end--;
         stringBuilderDecimal.setLength(end);
-        return stringBuilderDecimal;
     }
 }
