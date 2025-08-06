@@ -13,6 +13,14 @@ public class Perceptron implements Cloneable {
         this.vies = vies;
     }
 
+    public Perceptron(int numeroPesos) {
+        this.pesos = new double[numeroPesos];
+        for (int i = 0; i < numeroPesos; i++) {
+            this.pesos[i] = (Math.random() * 2 - 1) * 0.1;
+        }
+        this.vies = (Math.random() * 2 - 1) * 0.1;
+    }
+
     @Override
     public Perceptron clone() {
         Perceptron clone = new Perceptron();

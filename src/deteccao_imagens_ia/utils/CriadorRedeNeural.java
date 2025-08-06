@@ -46,9 +46,7 @@ public class CriadorRedeNeural {
     private static void criarCamadaVazia(RedeNeural redeNeural, int quantidadeNeuronios, int entradasPorNeuronio) {
         redeNeural.adicionarCamada(new Camada());
         for (int neuronioIndex = 0; neuronioIndex < quantidadeNeuronios; neuronioIndex++) {
-            var perceptron = new Perceptron();
-            perceptron.setPesos(new double[entradasPorNeuronio]);
-            perceptron.setVies(0.0);
+            var perceptron = new Perceptron(entradasPorNeuronio);
             redeNeural.getUltimaCamada().add(perceptron);
         }
     }
