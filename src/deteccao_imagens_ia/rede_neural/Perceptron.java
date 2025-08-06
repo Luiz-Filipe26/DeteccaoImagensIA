@@ -4,6 +4,7 @@ public class Perceptron implements Cloneable {
     private double[] pesos;
     private Double vies;
 
+
     public Perceptron() {
         vies = null;
     }
@@ -13,12 +14,13 @@ public class Perceptron implements Cloneable {
         this.vies = vies;
     }
 
-    public Perceptron(int numeroPesos) {
-        this.pesos = new double[numeroPesos];
+    public static Perceptron comInicializacaoAleatoria(int numeroPesos) {
+        double[] pesos = new double[numeroPesos];
         for (int i = 0; i < numeroPesos; i++) {
-            this.pesos[i] = (Math.random() * 2 - 1) * 0.1;
+            pesos[i] = (Math.random() * 2 - 1) * 0.1;
         }
-        this.vies = (Math.random() * 2 - 1) * 0.1;
+        double vies = (Math.random() * 2 - 1) * 0.1;
+        return new Perceptron(pesos, vies);
     }
 
     @Override

@@ -1,18 +1,21 @@
 package deteccao_imagens_ia.utils;
 
-import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
+import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 public class AvaliadorDesenho {
 
+    private static final int MAX_BOLINHAS_POR_CELULA = 10;
+
     public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
         var redeNeural = criarRedeNeuralValida(bolinhas, treinarModelo);
-        var entrada = calcularEntrada(bolinhas, redeNeural.getTamanhoEntrada());
-        if(treinarModelo) {
+        var entrada = normalizarEntrada(bolinhas, redeNeural.getTamanhoEntrada());
+        if (treinarModelo) {
             redeNeural.treinar(entrada, new double[]{1.0});
             salvarRede(redeNeural);
         }
@@ -29,14 +32,12 @@ public class AvaliadorDesenho {
 
     private RedeNeural criarRedeNeuralValida(List<Point> bolinhas, boolean treinarModelo) {
         var redeNeural = CriadorRedeNeural.criarRede();
-        if(redeNeural == null && treinarModelo) {
+        if (redeNeural == null && treinarModelo) {
             redeNeural = CriadorRedeNeural.criarRedePelaEntrada(this, bolinhas);
             System.out.println("Criado arquivo de pesos!");
         }
-        if(redeNeural == null)
-            throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
-        if (redeNeural.ehRedeInvalida())
-            throw new IllegalStateException("A Rede Neural não é válida!");
+        if (redeNeural == null) throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
+        if (redeNeural.ehRedeInvalida()) throw new IllegalStateException("A Rede Neural não é válida!");
         return redeNeural;
     }
 
@@ -53,28 +54,31 @@ public class AvaliadorDesenho {
             if (bolinha.y > maxY) maxY = bolinha.y;
         }
 
-        return new Rectangle(minX, minY, maxX - minX, maxY-minY);
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
     }
 
-    public double[] calcularEntrada(List<Point> bolinhas, int quantidadeEntradas) {
-        int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(quantidadeEntradas); // entrada de 50 ou 100
-        double[] entrada = new double[quantidadeEntradas];
+    public double[] normalizarEntrada(List<Point> bolinhas, int quantidadeEntradas) {
+        int[] contagens = new int[quantidadeEntradas];
         Rectangle areaDesenho = encontrarAreaDesenho(bolinhas);
+        contarEntradas(bolinhas, areaDesenho, contagens);
+        return normalizarEntrada(contagens);
+    }
 
+    private void contarEntradas(List<Point> bolinhas, Rectangle areaDesenho, int[] bolinhasPorEntrada) {
+        int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(bolinhasPorEntrada.length);
         for (var bolinha : bolinhas) {
-            int coluna = (int)((double)(bolinha.x - areaDesenho.x) / areaDesenho.width * tamanhoLadoDoGrid);
-            int linha = (int)((double)(bolinha.y - areaDesenho.y) / areaDesenho.height * tamanhoLadoDoGrid);
+            int coluna = (int) ((double) (bolinha.x - areaDesenho.x) / areaDesenho.width * tamanhoLadoDoGrid);
+            int linha = (int) ((double) (bolinha.y - areaDesenho.y) / areaDesenho.height * tamanhoLadoDoGrid);
             if (!estaDentroDoGrid(linha, coluna, tamanhoLadoDoGrid)) continue;
             int indice = linha * tamanhoLadoDoGrid + coluna;
-            entrada[indice] += 1.0;
+            bolinhasPorEntrada[indice]++;
         }
+    }
 
-        // Normalizar entradas para garantir valores entre 0 e 1. Número 10 fixado como máximo de bolinhas por célula
-        for (int i = 0; i < entrada.length; i++) {
-            entrada[i] = Math.min(entrada[i] / 10.0, 1.0);
-        }
-
-        return entrada;
+    private double[] normalizarEntrada(int[] bolinhasPorEntrada) {
+        return Arrays.stream(bolinhasPorEntrada)
+                .mapToDouble(item -> Math.min((double) item / MAX_BOLINHAS_POR_CELULA, 1.0))
+                .toArray();
     }
 
     private boolean estaDentroDoGrid(int linha, int coluna, int tamanhoLadoGrid) {

@@ -23,7 +23,7 @@ public class CriadorRedeNeural {
     }
 
     public static RedeNeural criarRedePelaEntrada(AvaliadorDesenho avaliadorDesenho, List<Point> bolinhas) {
-        double[] entrada = avaliadorDesenho.calcularEntrada(bolinhas, TAMANHO_CAMADA_ENTRADA);
+        double[] entrada = avaliadorDesenho.normalizarEntrada(bolinhas, TAMANHO_CAMADA_ENTRADA);
         var redeNeural = criarRedeNeuralVazia(obterTamanhoPorCamada());
         redeNeural.forcarAprendizado(entrada);
         return redeNeural;
@@ -46,7 +46,7 @@ public class CriadorRedeNeural {
     private static void criarCamadaVazia(RedeNeural redeNeural, int quantidadeNeuronios, int entradasPorNeuronio) {
         redeNeural.adicionarCamada(new Camada());
         for (int neuronioIndex = 0; neuronioIndex < quantidadeNeuronios; neuronioIndex++) {
-            var perceptron = new Perceptron(entradasPorNeuronio);
+            var perceptron = Perceptron.comInicializacaoAleatoria(entradasPorNeuronio);
             redeNeural.getUltimaCamada().add(perceptron);
         }
     }
