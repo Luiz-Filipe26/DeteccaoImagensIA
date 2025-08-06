@@ -69,6 +69,11 @@ public class AvaliadorDesenho {
             entrada[indice] += 1.0;
         }
 
+        // Normalizar entradas para garantir valores entre 0 e 1. Número 10 fixado como máximo de bolinhas por célula
+        for (int i = 0; i < entrada.length; i++) {
+            entrada[i] = Math.min(entrada[i] / 10.0, 1.0);
+        }
+
         return entrada;
     }
 
