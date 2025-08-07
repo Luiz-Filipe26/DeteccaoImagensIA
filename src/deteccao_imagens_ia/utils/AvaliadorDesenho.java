@@ -42,19 +42,11 @@ public class AvaliadorDesenho {
     }
 
     private Rectangle encontrarAreaDesenho(List<Point> bolinhas) {
-        int minX = Integer.MAX_VALUE;
-        int minY = Integer.MAX_VALUE;
-        int maxX = Integer.MIN_VALUE;
-        int maxY = Integer.MIN_VALUE;
-
-        for (var bolinha : bolinhas) {
-            if (bolinha.x < minX) minX = bolinha.x;
-            if (bolinha.y < minY) minY = bolinha.y;
-            if (bolinha.x > maxX) maxX = bolinha.x;
-            if (bolinha.y > maxY) maxY = bolinha.y;
-        }
-
-        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+        var statsX = bolinhas.stream().mapToInt(p -> p.x).summaryStatistics();
+        var statsY = bolinhas.stream().mapToInt(p -> p.y).summaryStatistics();
+        var menorPonto = new Point(statsX.getMin(), statsY.getMin());
+        var distancia = new Dimension(statsX.getMax() - menorPonto.x, statsY.getMax() - menorPonto.y);
+        return new Rectangle(menorPonto.x, menorPonto.y, distancia.width, distancia.height);
     }
 
     public double[] normalizarEntrada(List<Point> bolinhas, int quantidadeEntradas) {
