@@ -18,13 +18,12 @@ public class BaseTreinamento {
         desenhosClassificados.add(desenho);
     }
 
-    public void salvarExemplos(File arquivo) {
+    public void salvarExemplos(File arquivo) throws XMLEditor.FalhaXML {
         var editor = XMLEditor.deArquivo(arquivo);
-        if (editor.isEmpty()) throw new IllegalStateException("Erro ao criar documento XML");
-        var root = editor.get().criarAdicionandoElementoRaiz("exemplos");
+        var root = editor.criarAdicionandoElementoRaiz("exemplos");
         for (var desenhoClassificado : desenhosClassificados)
-            montarExemplo(editor.get(), root, desenhoClassificado);
-        if (!editor.get().salvar(arquivo)) throw new IllegalStateException("Erro ao salvar XML");
+            montarExemplo(editor, root, desenhoClassificado);
+        editor.salvar(arquivo);
     }
 
     private void montarExemplo(XMLEditor editor, Element root, DesenhoClassificado desenhoClassificado) {
@@ -39,12 +38,11 @@ public class BaseTreinamento {
         }
     }
 
-    public void carregarExemplos(File arquivo) {
+    public void carregarExemplos(File arquivo) throws XMLEditor.FalhaXML {
         var editor = XMLEditor.deArquivo(arquivo);
-        if (editor.isEmpty()) throw new IllegalStateException("Erro ao ler documento XML");
         desenhosClassificados.clear();
-        for (var desenhoElem : editor.get().obterFilhosIteraveis("desenho"))
-            desenhosClassificados.add(lerDesenhoClassificado(editor.get(), desenhoElem));
+        for (var desenhoElem : editor.obterFilhosIteraveis("desenho"))
+            desenhosClassificados.add(lerDesenhoClassificado(editor, desenhoElem));
     }
 
     private DesenhoClassificado lerDesenhoClassificado(XMLEditor editor, Element desenhoElem) {

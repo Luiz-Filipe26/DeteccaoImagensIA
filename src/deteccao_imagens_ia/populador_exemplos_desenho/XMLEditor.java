@@ -9,58 +9,61 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.util.Optional;
+import java.io.IOException;
 import java.util.stream.IntStream;
+import org.xml.sax.SAXException;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class XMLEditor {
+    public static class FalhaXML extends Exception {
+        public FalhaXML(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 
     private final Document documento;
 
-    public static Optional<XMLEditor> comNovoDocumento() {
-        var documento = criarDocumentoVazio();
-        return documento != null ? Optional.of(new XMLEditor(documento)) : Optional.empty();
+    public static XMLEditor comNovoDocumento() throws FalhaXML {
+        return new XMLEditor(criarDocumentoVazio());
     }
 
-    public static Optional<XMLEditor> deArquivo(File arquivo) {
-        var documento = carregarDocumento(arquivo);
-        return documento != null ? Optional.of(new XMLEditor(documento)) : Optional.empty();
+    public static XMLEditor deArquivo(File arquivo) throws FalhaXML {
+        return new XMLEditor(carregarDocumento(arquivo));
     }
 
     private XMLEditor(Document documento) {
         this.documento = documento;
     }
 
-    private static Document criarDocumentoVazio() {
-        var factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder;
+    // Métodos privados agora propagam a exceção
+    private static Document criarDocumentoVazio() throws FalhaXML {
         try {
-            builder = factory.newDocumentBuilder();
+            return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         } catch (ParserConfigurationException e) {
-            return null;
+            throw new FalhaXML("Falha ao criar um novo documento XML em branco.", e);
         }
-        return builder.newDocument();
     }
 
-    private static Document carregarDocumento(File arquivo) {
+    private static Document carregarDocumento(File arquivo) throws FalhaXML {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(arquivo);
             doc.getDocumentElement().normalize();
             return doc;
-        } catch (Exception e) {
-            return null;
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new FalhaXML("Falha ao carregar ou processar o arquivo: " + arquivo.getName(), e);
         }
     }
 
-    public boolean salvar(File arquivo) {
+    public void salvar(File arquivo) throws FalhaXML {
         try {
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             transformer.transform(new DOMSource(documento), new StreamResult(arquivo));
-            return true;
-        } catch (Exception e) {
-            return false;
+        } catch (TransformerException e ) {
+            throw new FalhaXML("Falha ao salvar o arquivo: " + arquivo.getName(), e);
         }
     }
 
