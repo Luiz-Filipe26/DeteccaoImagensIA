@@ -10,24 +10,27 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class XMLEditor {
 
     private final Document documento;
 
-    public XMLEditor() {
-        documento = criarDocumentoVazio();
+    public static Optional<XMLEditor> comNovoDocumento() {
+        var documento = criarDocumentoVazio();
+        return documento != null ? Optional.of(new XMLEditor(documento)) : Optional.empty();
     }
 
-    public XMLEditor(File arquivo) {
-        documento = carregarDocumento(arquivo);
+    public static Optional<XMLEditor> deArquivo(File arquivo) {
+        var documento = carregarDocumento(arquivo);
+        return documento != null ? Optional.of(new XMLEditor(documento)) : Optional.empty();
     }
 
-    public boolean estaSemDocumento() {
-        return documento == null;
+    private XMLEditor(Document documento) {
+        this.documento = documento;
     }
 
-    private Document criarDocumentoVazio() {
+    private static Document criarDocumentoVazio() {
         var factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
         try {
@@ -38,7 +41,7 @@ public class XMLEditor {
         return builder.newDocument();
     }
 
-    private Document carregarDocumento(File arquivo) {
+    private static Document carregarDocumento(File arquivo) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();

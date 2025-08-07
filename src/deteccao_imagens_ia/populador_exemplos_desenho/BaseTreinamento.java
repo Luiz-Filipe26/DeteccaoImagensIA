@@ -19,12 +19,12 @@ public class BaseTreinamento {
     }
 
     public void salvarExemplos(File arquivo) {
-        var editor = new XMLEditor();
-        if (editor.estaSemDocumento()) throw new IllegalStateException("Erro ao criar documento XML");
-        var root = editor.criarAdicionandoElementoRaiz("exemplos");
+        var editor = XMLEditor.deArquivo(arquivo);
+        if (editor.isEmpty()) throw new IllegalStateException("Erro ao criar documento XML");
+        var root = editor.get().criarAdicionandoElementoRaiz("exemplos");
         for (var desenhoClassificado : desenhosClassificados)
-            montarExemplo(editor, root, desenhoClassificado);
-        if (!editor.salvar(arquivo)) throw new IllegalStateException("Erro ao salvar XML");
+            montarExemplo(editor.get(), root, desenhoClassificado);
+        if (!editor.get().salvar(arquivo)) throw new IllegalStateException("Erro ao salvar XML");
     }
 
     private void montarExemplo(XMLEditor editor, Element root, DesenhoClassificado desenhoClassificado) {
@@ -40,11 +40,11 @@ public class BaseTreinamento {
     }
 
     public void carregarExemplos(File arquivo) {
-        var editor = new XMLEditor(arquivo);
-        if (editor.estaSemDocumento()) throw new IllegalStateException("Erro ao ler documento XML");
+        var editor = XMLEditor.deArquivo(arquivo);
+        if (editor.isEmpty()) throw new IllegalStateException("Erro ao ler documento XML");
         desenhosClassificados.clear();
-        for (var desenhoElem : editor.obterFilhosIteraveis("desenho"))
-            desenhosClassificados.add(lerDesenhoClassificado(editor, desenhoElem));
+        for (var desenhoElem : editor.get().obterFilhosIteraveis("desenho"))
+            desenhosClassificados.add(lerDesenhoClassificado(editor.get(), desenhoElem));
     }
 
     private DesenhoClassificado lerDesenhoClassificado(XMLEditor editor, Element desenhoElem) {
