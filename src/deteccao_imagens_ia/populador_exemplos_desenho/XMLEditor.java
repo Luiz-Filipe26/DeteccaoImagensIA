@@ -9,8 +9,8 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 public class XMLEditor {
 
@@ -72,12 +72,11 @@ public class XMLEditor {
         return obterElementoIteravel(pai.getElementsByTagName(nomeElemento));
     }
 
-    public Iterable<Element> obterElementoIteravel(NodeList nodeList){
-        var nodes = new ArrayList<Element>();
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            nodes.add((Element) nodeList.item(i));
-        }
-        return nodes;
+    public Iterable<Element> obterElementoIteravel(NodeList nodeList) {
+        return () -> IntStream.range(0, nodeList.getLength())
+                .mapToObj(nodeList::item)
+                .map(node -> (Element) node)
+                .iterator();
     }
 
     public Element criarAdicionandoElementoRaiz(String nomeElemento) {
