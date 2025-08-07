@@ -77,13 +77,13 @@ public class XMLEditor {
         return nodes;
     }
 
-    public Element criarElementoRaiz(String nomeElemento) {
+    public Element criarAdicionandoElementoRaiz(String nomeElemento) {
         var elemento = documento.createElement(nomeElemento);
         documento.appendChild(elemento);
         return elemento;
     }
 
-    public Element criarAdicionarElemento(Element pai, String elementoName) {
+    public Element criarAdicionandoElemento(Element pai, String elementoName) {
         var elemento = documento.createElement(elementoName);
         pai.appendChild(elemento);
         return elemento;

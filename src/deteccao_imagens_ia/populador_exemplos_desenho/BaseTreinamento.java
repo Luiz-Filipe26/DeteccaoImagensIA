@@ -21,19 +21,19 @@ public class BaseTreinamento {
     public void salvarExemplos(File arquivo) {
         var editor = new XMLEditor();
         if (editor.estaSemDocumento()) throw new IllegalStateException("Erro ao criar documento XML");
-        var root = editor.criarElementoRaiz("exemplos");
+        var root = editor.criarAdicionandoElementoRaiz("exemplos");
         for (var desenhoClassificado : desenhosClassificados)
             montarExemplo(editor, root, desenhoClassificado);
         if (!editor.salvar(arquivo)) throw new IllegalStateException("Erro ao salvar XML");
     }
 
     private void montarExemplo(XMLEditor editor, Element root, DesenhoClassificado desenhoClassificado) {
-        var desenhoElem = editor.criarAdicionarElemento(root, "desenho");
+        var desenhoElem = editor.criarAdicionandoElemento(root, "desenho");
         desenhoElem.setAttribute("hash", desenhoClassificado.gerarHash());
         desenhoElem.setAttribute("rotulo", desenhoClassificado.classificacaoDesenho().paraTexto());
 
         for (var ponto : desenhoClassificado.pontosDesenho()) {
-            var pontoElem = editor.criarAdicionarElemento(desenhoElem, "ponto");
+            var pontoElem = editor.criarAdicionandoElemento(desenhoElem, "ponto");
             pontoElem.setAttribute("x", String.valueOf(ponto.x));
             pontoElem.setAttribute("y", String.valueOf(ponto.y));
         }
