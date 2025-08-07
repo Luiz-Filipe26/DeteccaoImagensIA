@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RedeNeural {
-    private final List<Camada> camadas = new ArrayList<>();
+    private final ModeloRedeNeural modelo;
     private final RedeNeuralConfiguracao configuracao;
     private int epocaAtual = 0;
 
-    public RedeNeural(RedeNeuralConfiguracao redeNeuralConfiguracao) {
+    public RedeNeural(RedeNeuralConfiguracao redeNeuralConfiguracao, ModeloRedeNeural modelo) {
         this.configuracao = redeNeuralConfiguracao;
+        this.modelo = modelo;
     }
 
     public void aumentarEpoca() {
@@ -20,43 +21,8 @@ public class RedeNeural {
         this.epocaAtual = epocaAtual;
     }
 
-    public void adicionarCamada(Camada camada) {
-        camadas.add(camada);
-    }
-
-    public Camada getUltimaCamada() {
-        return camadas.get(camadas.size() - 1);
-    }
-
-    public int getTamanhoEntrada() {
-        return camadas.get(0).getNumeroEntradas();
-    }
-
-    public int getNumeroCamadas() {
-        return camadas.size();
-    }
-
-    public Camada getCamada(int index) {
-        return camadas.get(index);
-    }
-
-    public boolean ehRedeInvalida() {
-        if (camadas.isEmpty()) return true;
-        if (camadas.stream().anyMatch(Camada::isEmpty)) return true;
-        for (int i = 0; i < camadas.size(); i++) {
-            var camada = camadas.get(i);
-            var camadaAnterior = i == 0 ? null : camadas.get(i - 1);
-            if (!ehCamadaConsistente(camada, camadaAnterior)) return true;
-        }
-        return false;
-    }
-
-    private boolean ehCamadaConsistente(Camada camada, Camada camadaAnterior) {
-        int entradasEsperadas = camada.getNumeroEntradas();
-        for (var perceptron : camada) {
-            if (perceptron.ehInvalido() || perceptron.getNumeroPesos() != entradasEsperadas) return false;
-        }
-        return camadaAnterior == null || entradasEsperadas == camadaAnterior.size();
+    public ModeloRedeNeural getModelo() {
+        return modelo;
     }
 
     public void treinar(double[] entrada, double[] esperado) {
@@ -77,7 +43,7 @@ public class RedeNeural {
     private HistoricoDeAtivacao calcularSaidas(double[] entrada) {
         var historicoDeAtivacao = new HistoricoDeAtivacao();
         double[] saidaAtual = entrada;
-        for (var camada : camadas)
+        for (var camada : modelo.getIteradorDeCamadas())
             saidaAtual = calcularSaidaCamada(historicoDeAtivacao, camada, saidaAtual);
         return historicoDeAtivacao;
     }
@@ -91,24 +57,27 @@ public class RedeNeural {
     }
 
     private void validarTreino(double[] entrada, double[] esperado) {
-        var camadaSaida = camadas.get(camadas.size() - 1);
-        if(entrada.length != this.getTamanhoEntrada())
+        var camadaSaida = modelo.getCamadaSaida();
+        if(entrada.length != modelo.getTamanhoEntrada())
             throw new IllegalArgumentException("Tamanho do vetor entrada não corresponde ao da camada de entrada.");
         if (esperado.length != camadaSaida.size())
             throw new IllegalArgumentException("Tamanho do vetor esperado não corresponde ao da camada de saída.");
-        if(ehRedeInvalida())
+        if(modelo.saoCamadasInconsistentes())
             throw new IllegalArgumentException("A Rede Neural não é válida!");
     }
 
     private double[][] inicializarDeltas() {
-        var deltas = new double[camadas.size()][];
-        for (int camadaIndex = 0; camadaIndex < camadas.size(); camadaIndex++)
-            deltas[camadaIndex] = new double[camadas.get(camadaIndex).size()];
+        var deltas = new double[modelo.getNumeroCamadas()][];
+        int camadaIndex = 0;
+        for (var camada : modelo.getIteradorDeCamadas()) {
+            deltas[camadaIndex] = new double[camada.size()];
+            camadaIndex++;
+        }
         return deltas;
     }
 
     private void calcularDeltasCamadaSaida(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] esperado) {
-        int camadaSaidaIndex = camadas.size() - 1;
+        int camadaSaidaIndex = modelo.getNumeroCamadas() - 1;
         var saidasCamadaAtivacao = historicoDeAtivacao.saidasAntesDeAtivar().get(camadaSaidaIndex);
         for (int neuronioIndex = 0; neuronioIndex < saidasCamadaAtivacao.length; neuronioIndex++)
             deltas[camadaSaidaIndex][neuronioIndex] = calcularDelta(saidasCamadaAtivacao[neuronioIndex], esperado[neuronioIndex]);
@@ -122,10 +91,10 @@ public class RedeNeural {
     }
 
     private void calcularDeltasCamadasOcultas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas) {
-        for (int camadaIndex = camadas.size() - 2; camadaIndex >= 0; camadaIndex--) {
+        for (int camadaIndex = modelo.getNumeroCamadas() - 2; camadaIndex >= 0; camadaIndex--) {
             int camadaSucessoraIndex = camadaIndex + 1;
             var saidasCamada = historicoDeAtivacao.saidasAntesDeAtivar().get(camadaIndex);
-            deltas[camadaIndex] = obterDeltasCamadaOculta(saidasCamada, camadas.get(camadaSucessoraIndex), deltas[camadaSucessoraIndex]);
+            deltas[camadaIndex] = obterDeltasCamadaOculta(saidasCamada, modelo.getCamada(camadaSucessoraIndex), deltas[camadaSucessoraIndex]);
         }
     }
 
@@ -149,11 +118,12 @@ public class RedeNeural {
 
     private void aplicarDeltas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] entrada) {
         var taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(epocaAtual);
-        for (int camadaIndex = 0; camadaIndex < camadas.size(); camadaIndex++) {
-            var camada = camadas.get(camadaIndex);
+        int camadaIndex = 0;
+        for (var camada : modelo.getIteradorDeCamadas()) {
             double[] entradas = (camadaIndex == 0) ? entrada : historicoDeAtivacao.saidasAtivadas().get(camadaIndex - 1);
             for (int neuronioIndex = 0; neuronioIndex < camada.size(); neuronioIndex++)
                 camada.get(neuronioIndex).atualizarPesos(entradas, taxaAprendizado, deltas[camadaIndex][neuronioIndex]);
+            camadaIndex++;
         }
     }
 }

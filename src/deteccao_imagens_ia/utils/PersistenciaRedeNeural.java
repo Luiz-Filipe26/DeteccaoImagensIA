@@ -1,8 +1,6 @@
 package deteccao_imagens_ia.utils;
 
-import deteccao_imagens_ia.rede_neural.Camada;
-import deteccao_imagens_ia.rede_neural.Perceptron;
-import deteccao_imagens_ia.rede_neural.RedeNeural;
+import deteccao_imagens_ia.rede_neural.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,27 +50,26 @@ public class PersistenciaRedeNeural {
         return pasta.resolve(nomeArquivo);
     }
 
-    public static RedeNeural construirRede(List<String> linhas, RedeNeural redeNeural) {
-        redeNeural.adicionarCamada(new Camada());
+    public static RedeNeural construirRede(List<String> linhas, ModeloRedeNeural modeloAPopular) {
         var perceptronAtual = new Perceptron();
         for (var linha : linhas) {
-            processarLinha(linha, redeNeural, perceptronAtual);
-            perceptronAtual = pegarPerceptronAtual(redeNeural, perceptronAtual);
+            processarLinha(linha, modeloAPopular, perceptronAtual);
+            perceptronAtual = obterPerceptronAtual(modeloAPopular, perceptronAtual);
         }
-        return redeNeural;
+        return new RedeNeural(new RedeNeuralConfiguracao(), modeloAPopular);
     }
 
-    private static void processarLinha(String linha, RedeNeural redeNeural, Perceptron perceptronAtual) {
+    private static void processarLinha(String linha, ModeloRedeNeural modelo, Perceptron perceptronAtual) {
         if (linha.matches(LINHA_IGNORAVEL_REGEX)) return;
-        if (linha.matches(SEPARADOR_CAMADA_REGEX)) redeNeural.adicionarCamada(new Camada());
+        if (linha.matches(SEPARADOR_CAMADA_REGEX)) modelo.adicionarCamada(new Camada());
         else if (linha.matches(PESOS_REGEX)) perceptronAtual.setPesos(extrairPesos(linha));
         else if (linha.matches(VIES_REGEX)) perceptronAtual.setVies(extrairVies(linha));
         else throw new IllegalArgumentException("Linha não reconhecida: " + linha);
     }
 
-    private static Perceptron pegarPerceptronAtual(RedeNeural redeNeural, Perceptron perceptronAtual) {
+    private static Perceptron obterPerceptronAtual(ModeloRedeNeural modelo, Perceptron perceptronAtual) {
         if (perceptronAtual.ehInvalido()) return perceptronAtual;
-        redeNeural.getUltimaCamada().add(perceptronAtual);
+        modelo.getUltimaCamada().add(perceptronAtual);
         return new Perceptron();
     }
 
@@ -88,11 +85,11 @@ public class PersistenciaRedeNeural {
         return Double.parseDouble(linha.substring(VIES_PREFIXO.length()).trim());
     }
 
-    public static void salvarRede(RedeNeural redeNeural) throws IOException {
+    public static void salvarRede(ModeloRedeNeural modelo) throws IOException {
         List<String> linhas = new ArrayList<>();
-        for (int i = 0; i < redeNeural.getNumeroCamadas(); i++) {
+        for (int i = 0; i < modelo.getNumeroCamadas(); i++) {
             if (i > 0) linhas.add(SEPARADOR_CAMADA_PREFIXO + " Camada " + i);
-            criarCamadaLinhas(redeNeural.getCamada(i), linhas);
+            criarCamadaLinhas(modelo.getCamada(i), linhas);
         }
         Files.write(CAMINHO_ARQUIVO, linhas);}
 

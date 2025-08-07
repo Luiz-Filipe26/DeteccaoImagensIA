@@ -1,5 +1,6 @@
 package deteccao_imagens_ia.utils;
 
+import deteccao_imagens_ia.rede_neural.ModeloRedeNeural;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
 import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 
@@ -13,27 +14,27 @@ public class AvaliadorDesenho {
     private static final int MAX_BOLINHAS_POR_CELULA = 10;
 
     public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
-        var redeNeural = criarRedeNeuralValida(bolinhas, treinarModelo);
-        var entrada = normalizarEntrada(bolinhas, redeNeural.getTamanhoEntrada());
+        var redeNeural = criarRedeNeuralValida();
+        var entrada = normalizarEntrada(bolinhas, redeNeural.getModelo().getTamanhoEntrada());
         if (treinarModelo) {
             redeNeural.treinar(entrada, new double[]{1.0});
-            salvarRede(redeNeural);
+            salvarRede(redeNeural.getModelo());
         }
         return redeNeural.detectar(entrada);
     }
 
-    private void salvarRede(RedeNeural redeNeural) {
+    private void salvarRede(ModeloRedeNeural modelo) {
         try {
-            PersistenciaRedeNeural.salvarRede(redeNeural);
+            PersistenciaRedeNeural.salvarRede(modelo);
         } catch (IOException e) {
             System.err.println("Erro ao salvar pesos: " + e.getMessage());
         }
     }
 
-    private RedeNeural criarRedeNeuralValida(List<Point> bolinhas, boolean treinarModelo) {
+    private RedeNeural criarRedeNeuralValida() {
         var redeNeural = CriadorRedeNeural.criarRede();
         if (redeNeural == null) throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
-        if (redeNeural.ehRedeInvalida()) throw new IllegalStateException("A Rede Neural não é válida!");
+        if (redeNeural.getModelo().saoCamadasInconsistentes()) throw new IllegalStateException("A Rede Neural não é válida!");
         return redeNeural;
     }
 
