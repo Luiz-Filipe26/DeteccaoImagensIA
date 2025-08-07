@@ -3,24 +3,21 @@ package deteccao_imagens_ia.rede_neural;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RedeNeural implements Cloneable {
-    private static final double LIMIAR = 0.5;
-    private static final double TAXA_APRENDIZADO_PADRAO = 0.5;
-
+public class RedeNeural {
     private final List<Camada> camadas = new ArrayList<>();
-    private double taxaAprendizado;
+    private final RedeNeuralConfiguracao configuracao;
+    private int epocaAtual = 0;
 
-    public RedeNeural() {
-        this.taxaAprendizado = TAXA_APRENDIZADO_PADRAO;
+    public RedeNeural(RedeNeuralConfiguracao redeNeuralConfiguracao) {
+        this.configuracao = redeNeuralConfiguracao;
     }
 
-    @Override
-    public RedeNeural clone() {
-        RedeNeural clone = new RedeNeural();
-        clone.taxaAprendizado = this.taxaAprendizado;
-        for (var camada : this.camadas)
-            clone.camadas.add(camada.clone());
-        return clone;
+    public void aumentarEpoca() {
+        epocaAtual++;
+    }
+
+    public void setEpocaAtual(int epocaAtual) {
+        this.epocaAtual = epocaAtual;
     }
 
     public void adicionarCamada(Camada camada) {
@@ -62,14 +59,6 @@ public class RedeNeural implements Cloneable {
         return camadaAnterior == null || entradasEsperadas == camadaAnterior.size();
     }
 
-    public void forcarAprendizado(double[] entrada) {
-        var redeNeuralClone = clone();
-        redeNeuralClone.taxaAprendizado = 1.0;
-        redeNeuralClone.treinar(entrada, new double[]{1.0});
-        camadas.clear();
-        camadas.addAll(redeNeuralClone.camadas);
-    }
-
     public void treinar(double[] entrada, double[] esperado) {
         validarTreino(entrada, esperado);
         var historicoDeAtivacao = calcularSaidas(entrada);
@@ -82,7 +71,7 @@ public class RedeNeural implements Cloneable {
     public ResultadoClassificacao detectar(double[] entrada) {
         double[] saida = calcularSaidas(entrada).getSaidaRedeAtivada();
         if (saida.length != 1) throw new IllegalArgumentException("A saída da rede neural deve ter só 1 valor!");
-        return saida[0] > LIMIAR ? ResultadoClassificacao.DESENHO_ESPERADO : ResultadoClassificacao.DESENHO_NAO_ESPERADO;
+        return saida[0] > configuracao.limiar() ? ResultadoClassificacao.DESENHO_ESPERADO : ResultadoClassificacao.DESENHO_NAO_ESPERADO;
     }
 
     private HistoricoDeAtivacao calcularSaidas(double[] entrada) {
@@ -159,6 +148,7 @@ public class RedeNeural implements Cloneable {
     }
 
     private void aplicarDeltas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] entrada) {
+        var taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(epocaAtual);
         for (int camadaIndex = 0; camadaIndex < camadas.size(); camadaIndex++) {
             var camada = camadas.get(camadaIndex);
             double[] entradas = (camadaIndex == 0) ? entrada : historicoDeAtivacao.saidasAtivadas().get(camadaIndex - 1);

@@ -3,6 +3,7 @@ package deteccao_imagens_ia.utils;
 import deteccao_imagens_ia.rede_neural.Camada;
 import deteccao_imagens_ia.rede_neural.Perceptron;
 import deteccao_imagens_ia.rede_neural.RedeNeural;
+import deteccao_imagens_ia.rede_neural.RedeNeuralConfiguracao;
 
 import java.awt.*;
 import java.util.List;
@@ -16,17 +17,10 @@ public class CriadorRedeNeural {
     public static RedeNeural criarRede() {
         List<String> linhas = PersistenciaRedeNeural.lerArquivoDePesos();
         if (linhas.isEmpty()) {
-            System.out.println("Arquivo de pesos vazio ou inexistente.");
-            return null;
+            System.out.println("Arquivo de pesos vazio ou inexistente. Criando rede neural vazia.");
+            return criarRedeNeuralVazia(obterTamanhoPorCamada());
         }
-        return PersistenciaRedeNeural.construirRede(linhas, new RedeNeural());
-    }
-
-    public static RedeNeural criarRedePelaEntrada(AvaliadorDesenho avaliadorDesenho, List<Point> bolinhas) {
-        double[] entrada = avaliadorDesenho.normalizarEntrada(bolinhas, TAMANHO_CAMADA_ENTRADA);
-        var redeNeural = criarRedeNeuralVazia(obterTamanhoPorCamada());
-        redeNeural.forcarAprendizado(entrada);
-        return redeNeural;
+        return PersistenciaRedeNeural.construirRede(linhas, new RedeNeural(new RedeNeuralConfiguracao()));
     }
 
     private static List<Integer> obterTamanhoPorCamada() {
@@ -34,7 +28,7 @@ public class CriadorRedeNeural {
     }
 
     private static RedeNeural criarRedeNeuralVazia(List<Integer> tamanhosPorCamada) {
-        var redeNeural = new RedeNeural();
+        var redeNeural = new RedeNeural(new RedeNeuralConfiguracao());
         for (int tamanhoIndex = 1; tamanhoIndex < tamanhosPorCamada.size(); tamanhoIndex++) {
             int entradasPorNeuronio = tamanhosPorCamada.get(tamanhoIndex - 1);
             int quantidadeNeuronios = tamanhosPorCamada.get(tamanhoIndex);

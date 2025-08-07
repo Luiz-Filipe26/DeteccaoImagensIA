@@ -1,6 +1,6 @@
 package deteccao_imagens_ia.rede_neural;
 
-public class Perceptron implements Cloneable {
+public class Perceptron {
     private double[] pesos;
     private Double vies;
 
