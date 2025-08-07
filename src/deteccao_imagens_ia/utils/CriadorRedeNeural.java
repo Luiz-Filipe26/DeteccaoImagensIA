@@ -13,12 +13,11 @@ public class CriadorRedeNeural {
 
     public static RedeNeural criarRede() {
         List<String> linhas = PersistenciaRedeNeural.lerArquivoDePesos();
-        var redeNeuralVazia = criarRedeNeuralVazia();
         if (linhas.isEmpty()) {
             System.out.println("Arquivo de pesos vazio ou inexistente. Criado rede neural vazia.");
-            return redeNeuralVazia;
+            return criarRedeNeuralVazia();
         }
-        return PersistenciaRedeNeural.construirRede(linhas, redeNeuralVazia.getModelo());
+        return PersistenciaRedeNeural.construirRede(linhas, new ModeloRedeNeural());
     }
 
     private static RedeNeural criarRedeNeuralVazia() {

@@ -7,6 +7,10 @@ import java.util.List;
 public class ModeloRedeNeural {
     private final List<Camada> camadas = new ArrayList<>();
 
+    public ModeloRedeNeural() {
+
+    }
+
     public ModeloRedeNeural(List<Integer> tamanhosPorCamada) {
         criarCamadasVazias(tamanhosPorCamada);
     }
