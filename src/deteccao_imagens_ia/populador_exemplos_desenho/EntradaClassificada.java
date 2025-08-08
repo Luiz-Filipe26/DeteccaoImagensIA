@@ -1,23 +1,21 @@
 package deteccao_imagens_ia.populador_exemplos_desenho;
 
-import deteccao_imagens_ia.utils.AvaliadorDesenho;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 
 public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classificacao) {
 
-    public static EntradaClassificada deDesenhoClassificado(DesenhoClassificado desenhoClassificado, int quantidadeEntradas) {
-        double[] entrada = normalizarEntrada(desenhoClassificado.pontosDesenho(), quantidadeEntradas);
+    public static EntradaClassificada deDesenho(DesenhoClassificado desenhoClassificado, int quantidadeEntradas, int maxBolinhaPorCelula) {
+        double[] entrada = normalizarEntrada(desenhoClassificado.pontosDesenho(), quantidadeEntradas, maxBolinhaPorCelula);
         return new EntradaClassificada(entrada, desenhoClassificado.classificacaoDesenho());
     }
 
-    private static double[] normalizarEntrada(List<Point> pontos, int quantidadeEntradas) {
+    private static double[] normalizarEntrada(List<Point> pontos, int quantidadeEntradas, int maxBolinhaPorCelula) {
         int[] contagens = new int[quantidadeEntradas];
         Rectangle areaDesenho = encontrarAreaDesenho(pontos);
         contarEntradas(pontos, areaDesenho, contagens);
-        return normalizarEntrada(contagens);
+        return normalizarEntrada(contagens, maxBolinhaPorCelula);
     }
 
     private static Rectangle encontrarAreaDesenho(List<Point> pontos) {
@@ -39,9 +37,9 @@ public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classif
         }
     }
 
-    private static double[] normalizarEntrada(int[] pontosPorEntrada) {
+    private static double[] normalizarEntrada(int[] pontosPorEntrada, int maxBolinhaPorCelula) {
         return Arrays.stream(pontosPorEntrada)
-                .mapToDouble(item -> Math.min((double) item / AvaliadorDesenho.MAX_BOLINHAS_POR_CELULA, 1.0))
+                .mapToDouble(item -> Math.min((double) item / maxBolinhaPorCelula, 1.0))
                 .toArray();
     }
 

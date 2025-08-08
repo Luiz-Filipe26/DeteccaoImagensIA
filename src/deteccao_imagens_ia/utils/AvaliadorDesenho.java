@@ -18,7 +18,8 @@ public class AvaliadorDesenho {
     public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
         var redeNeural = criarRedeNeuralValida();
         var desenhoClassificao = new DesenhoClassificado(ClassificacaoDesenho.BONECO_DE_PALITO, bolinhas);
-        var entradaClassificada = EntradaClassificada.deDesenhoClassificado(desenhoClassificao, redeNeural.getModelo().getTamanhoEntrada());
+        int tamanhoEntrada =  redeNeural.getModelo().getTamanhoEntrada();
+        var entradaClassificada = EntradaClassificada.deDesenho(desenhoClassificao, tamanhoEntrada, MAX_BOLINHAS_POR_CELULA);
         if (treinarModelo) {
             redeNeural.treinar(entradaClassificada.entrada(), new double[]{1.0});
             salvarRede(redeNeural.getModelo());
