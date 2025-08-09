@@ -23,12 +23,13 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     private final static Font fonteMenor = new Font("Arial", Font.PLAIN, 16);
     private final static Font fonteTitulo = new Font("Arial", Font.BOLD, 24);
 
+    private PainelDesenho painelGrafico;
     private JLabel textoBolinhasRestantes;
     private JButton limparDesenho;
     private JButton avaliarDesenho;
-    private PainelDesenho painelGrafico;
     private JButton salvarDesenho;
     private JButton carregarExemplos;
+    private JButton treinarComExemplos;
     private JCheckBox checkBoxEhBonecoPalito;
 
     private final List<Point> bolinhas = new ArrayList<>();
@@ -109,7 +110,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         salvarDesenho.setFont(fonteMenor);
         carregarExemplos = new JButton("Carregar Exemplos");
         carregarExemplos.setFont(fonteMenor);
-        var treinarComExemplos = new JButton("Treinar com Todos Exemplos");
+        treinarComExemplos = new JButton("Treinar com Todos Exemplos");
         treinarComExemplos.setFont(fonteMenor);
         painelLinha2.add(avaliarDesenho);
         painelLinha2.add(limparDesenho);
@@ -127,6 +128,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         limparDesenho.addActionListener(event -> limparDesenho());
         carregarExemplos.addActionListener(event -> carregarExemplos());
         salvarDesenho.addActionListener(event -> salvarDesenho());
+        treinarComExemplos.addActionListener(event -> treinarComExemplo());
     }
 
     public void avaliarDesenhoClicado() {
@@ -141,7 +143,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
 
     private void mostrarResultado(ResultadoClassificacao resultado) {
         var ehBoneco = resultado == ResultadoClassificacao.DESENHO_ESPERADO;
-        var texto = true
+        var texto = checkBoxEhBonecoPalito.isSelected()
                 ? (ehBoneco ? "Resultado - o modelo acertou: um boneco de palito!" : "Resultado - o modelo errou: Não é um boneco de palito!")
                 : (ehBoneco ? "Resultado: um boneco de palito!" : "Resultado: Não é um boneco de palito!");
         textoBolinhasRestantes.setText(texto);
@@ -158,12 +160,11 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         arquivoOpctional.ifPresentOrElse(arquivo -> {
             try {
                 baseTreinamento.carregarExemplos(arquivo);
-                JOptionPane.showMessageDialog(this, "Exemplos de desenho carregados com sucesso!");
+                mostrarPopUpSucesso("Exemplos de desenho carregados com sucesso!");
             } catch (XMLEditor.FalhaXML falhaXML) {
-                var message = "Erro ao carregar exemplos: " + falhaXML.getMessage();
-                JOptionPane.showMessageDialog(this, message, "Erro", JOptionPane.ERROR_MESSAGE);
+                mostrarPopUpErro("Erro ao carregar exemplos: " + falhaXML.getMessage());
             }
-        }, () -> JOptionPane.showMessageDialog(this, "Selecionou nenhum arquivo!"));
+        }, () -> mostrarPopUp("Selecionou nenhum arquivo!"));
     }
 
     private Optional<File> solicitarArquivo(String titulo) {
@@ -176,31 +177,31 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     }
 
     private void salvarDesenho() {
-        var novoDesenho = gerarDesenhoClassificado();
-
-        var message = "É necessário desenhar ao menos " + MINIMO_BOLINHAS + " bolinhas para salvar o exemplo.";
-        JOptionPane.showMessageDialog(this, message, "Desenho Incompleto", JOptionPane.WARNING_MESSAGE);
-
-        var arquivoOpcional = solicitarArquivoParaSalvar("Salvar arquivo de exemplos", ".xml");
-
-        arquivoOpcional.ifPresentOrElse(arquivo -> {
-            try {
-                baseTreinamento.salvarExemplos(arquivo);
-                message = "Desenho adicionado e base de exemplos salva com sucesso!";
-                JOptionPane.showMessageDialog(this, message, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-            } catch (XMLEditor.FalhaXML e) {
-                message = "Erro ao salvar o arquivo de exemplos: " + e.getMessage();
-                JOptionPane.showMessageDialog(this, message, "Erro de Salvamento", JOptionPane.ERROR_MESSAGE);
-            }
-        }, () -> JOptionPane.showMessageDialog(this, "Operação de salvamento cancelada."));
+        if(!baseTreinamento.isExemplosCarregados()) {
+            int confirmacao = JOptionPane.showConfirmDialog(this, "Deseja carregar a base de treinamento antes?");
+            if(confirmacao == JOptionPane.YES_OPTION)
+                carregarExemplos();
+        }
+        var novoDesenhoOpctional = gerarDesenhoClassificado();
+        novoDesenhoOpctional.ifPresentOrElse(novoDesenho -> {
+            baseTreinamento.adicionarDesenho(novoDesenho);
+            var arquivoOpcional = solicitarArquivoParaSalvar("Salvar arquivo de exemplos", ".xml");
+            arquivoOpcional.ifPresentOrElse(arquivo -> {
+                try {baseTreinamento.adicionarDesenho(novoDesenho);
+                    baseTreinamento.salvarExemplos(arquivo);
+                    mostrarPopUpSucesso("Desenho adicionado e base de exemplos salva com sucesso!");
+                } catch (XMLEditor.FalhaXML e) {
+                    mostrarPopUpErro("Erro ao salvar o arquivo de exemplos: " + e.getMessage());
+                }
+            }, () -> mostrarPopUp("Operação de salvamento cancelada."));
+        }, () -> mostrarPopUp("É necessário desenhar ao menos " + MINIMO_BOLINHAS + " bolinhas para salvar o exemplo."));
     }
 
     private Optional<DesenhoClassificado> gerarDesenhoClassificado() {
         if (bolinhas.size() < MINIMO_BOLINHAS) return Optional.empty();
         var classificacao = checkBoxEhBonecoPalito.isSelected() ? ClassificacaoDesenho.BONECO_DE_PALITO : ClassificacaoDesenho.OUTROS_DESENHOS;
         var novoDesenho = new DesenhoClassificado(classificacao, new ArrayList<>(bolinhas));
-        baseTreinamento.adicionarDesenho(novoDesenho);
-        return novoDesenho;
+        return Optional.of(novoDesenho);
     }
 
     private Optional<File> solicitarArquivoParaSalvar(String titulo, String extensao) {
@@ -214,5 +215,20 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         if (!caminhoArquivo.toLowerCase().endsWith(extensao.toLowerCase()))
             arquivoParaSalvar = new File(caminhoArquivo + extensao.toLowerCase());
         return Optional.of(arquivoParaSalvar);
+    }
+
+    private void treinarComExemplo() {
+    }
+
+    private void mostrarPopUp(String mensagem) {
+        JOptionPane.showMessageDialog(this, mensagem);
+    }
+
+    private void mostrarPopUpSucesso(String mensagem) {
+        JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void mostrarPopUpErro(String mensagem) {
+        JOptionPane.showMessageDialog(this, mensagem, "Erro", JOptionPane.ERROR_MESSAGE);
     }
 }
