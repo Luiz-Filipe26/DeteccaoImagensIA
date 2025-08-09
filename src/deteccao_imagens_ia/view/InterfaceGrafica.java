@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
-    private static final int LARGURA_JANELA = 600;
-    private static final int ALTURA_JANELA = 800;
+    private static final int LARGURA_JANELA = 800;
+    private static final int ALTURA_JANELA = 1100;
     private static final int MINIMO_BOLINHAS = 20;
 
     private final static Font fonte = new Font("Arial", Font.PLAIN, 20);

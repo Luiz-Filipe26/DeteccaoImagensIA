@@ -8,8 +8,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 
 public class PainelDesenho extends JPanel {
-    private static final int RAIO_BOLINHA = 25;
-    private static final int RAIO_CURSOR = 25;
+    private static final int RAIO_BOLINHA = 35;
+    private static final int RAIO_CURSOR = 35;
     private static final Color COR_BOLINHA = Color.BLACK;
     private static final Color COR_CURSOR = Color.LIGHT_GRAY;
     private static final Color COR_FUNDO = Color.WHITE;

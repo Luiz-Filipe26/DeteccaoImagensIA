@@ -26,6 +26,7 @@ public class AvaliadorDesenho {
     }
 
     public void treinarRede(BaseTreinamento baseTreinamento) {
+        if(redeNeural == null) criarRedeNeuralValida();
         int tamanhoEntrada = redeNeural.getModelo().getTamanhoEntrada();
         var entradas = baseTreinamento.getEntradasClassificadas(tamanhoEntrada, MAX_BOLINHAS_POR_CELULA);
         redeNeural.treinarEmLote(entradas, ClassificacaoDesenho.BONECO_DE_PALITO);

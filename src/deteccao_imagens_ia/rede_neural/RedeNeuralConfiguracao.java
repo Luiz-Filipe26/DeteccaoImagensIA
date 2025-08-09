@@ -6,8 +6,8 @@ public record RedeNeuralConfiguracao(Integer numeroEpocas, Double limiar, Double
     private static final Integer NUMERO_EPOCAS = 40;
     private static final Double LIMIAR = 0.5;
     private static final Double TAXA_APRENDIZADO_INICIAL = 0.2;
-    private static final Double TAXA_DECAIMENTO_TAXA_APRENDIZADO = 0.5;
-    private static final Double PASSO_DECAIMENTO_TAXA_APRENDIZADO = 5.0;
+    private static final Double TAXA_DECAIMENTO_TAXA_APRENDIZADO = 0.98;
+    private static final Double PASSO_DECAIMENTO_TAXA_APRENDIZADO = 20.0;
 
     public RedeNeuralConfiguracao() {
         this(NUMERO_EPOCAS, LIMIAR, TAXA_APRENDIZADO_INICIAL, TAXA_DECAIMENTO_TAXA_APRENDIZADO, PASSO_DECAIMENTO_TAXA_APRENDIZADO);

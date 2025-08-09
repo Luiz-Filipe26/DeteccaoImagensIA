@@ -15,7 +15,7 @@ public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classif
         int[] contagens = new int[quantidadeEntradas];
         Rectangle areaDesenho = encontrarAreaDesenho(pontos);
         contarEntradas(pontos, areaDesenho, contagens);
-        return normalizarEntrada(contagens, maxBolinhaPorCelula);
+        return normalizarContagem(contagens, maxBolinhaPorCelula);
     }
 
     private static Rectangle encontrarAreaDesenho(List<Point> pontos) {
@@ -37,7 +37,7 @@ public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classif
         }
     }
 
-    private static double[] normalizarEntrada(int[] pontosPorEntrada, int maxBolinhaPorCelula) {
+    private static double[] normalizarContagem(int[] pontosPorEntrada, int maxBolinhaPorCelula) {
         return Arrays.stream(pontosPorEntrada)
                 .mapToDouble(item -> Math.min((double) item / maxBolinhaPorCelula, 1.0))
                 .toArray();
