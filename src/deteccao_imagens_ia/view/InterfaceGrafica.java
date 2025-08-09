@@ -3,7 +3,7 @@ package deteccao_imagens_ia.view;
 import deteccao_imagens_ia.populador_exemplos_desenho.BaseTreinamento;
 import deteccao_imagens_ia.populador_exemplos_desenho.ClassificacaoDesenho;
 import deteccao_imagens_ia.populador_exemplos_desenho.DesenhoClassificado;
-import deteccao_imagens_ia.populador_exemplos_desenho.XMLEditor;
+import deteccao_imagens_ia.utils.XMLEditor;
 import deteccao_imagens_ia.utils.AvaliadorDesenho;
 import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
 

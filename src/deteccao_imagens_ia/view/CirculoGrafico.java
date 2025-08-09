@@ -23,10 +23,10 @@ public record CirculoGrafico(Point pontoCentral, int raio, Color cor, Tipo tipo)
         graphics.setColor(cor);
         int x = getX() - raio;
         int y = getY() - raio;
-        int d = raio * 2;
+        int diametro = raio * 2;
         if (tipo == Tipo.OCO)
-            graphics.drawOval(x, y, d, d);
+            graphics.drawOval(x, y, diametro, diametro);
         else
-            graphics.fillOval(x, y, d, d);
+            graphics.fillOval(x, y, diametro, diametro);
     }
 }
