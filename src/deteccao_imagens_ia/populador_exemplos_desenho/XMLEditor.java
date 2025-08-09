@@ -35,7 +35,6 @@ public class XMLEditor {
         this.documento = documento;
     }
 
-    // Métodos privados agora propagam a exceção
     private static Document criarDocumentoVazio() throws FalhaXML {
         try {
             return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();

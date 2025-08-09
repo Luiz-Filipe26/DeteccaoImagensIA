@@ -16,6 +16,7 @@ public class BaseTreinamento {
     public static final String PONTO_X_ATTR = "x";
     public static final String PONTO_Y_ATTR = "y";
     private final List<DesenhoClassificado> desenhosClassificados = new ArrayList<>();
+    private boolean exemplosCarregados;
 
 
     public void adicionarDesenho(DesenhoClassificado desenho) {
@@ -50,11 +51,16 @@ public class BaseTreinamento {
         }
     }
 
+    public boolean isExemplosCarregados() {
+        return exemplosCarregados;
+    }
+
     public void carregarExemplos(File arquivo) throws XMLEditor.FalhaXML {
         var editor = XMLEditor.deArquivo(arquivo);
         desenhosClassificados.clear();
         for (var desenhoElem : editor.obterFilhosIteraveis(DESENHO_ATTR))
             desenhosClassificados.add(lerDesenhoClassificado(editor, desenhoElem));
+        exemplosCarregados = true;
     }
 
     private DesenhoClassificado lerDesenhoClassificado(XMLEditor editor, Element desenhoElem) {
