@@ -1,6 +1,11 @@
 package deteccao_imagens_ia.rede_neural;
 
+import deteccao_imagens_ia.populador_exemplos_desenho.ClassificacaoDesenho;
+import deteccao_imagens_ia.populador_exemplos_desenho.DesenhoClassificado;
+import deteccao_imagens_ia.populador_exemplos_desenho.EntradaClassificada;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class RedeNeural {
@@ -23,6 +28,25 @@ public class RedeNeural {
 
     public ModeloRedeNeural getModelo() {
         return modelo;
+    }
+
+    public void treinarEmLote(List<EntradaClassificada> exemplos, ClassificacaoDesenho desenhoEsperado) {
+        System.out.println("Iniciando treinamento em lote com " + exemplos.size() + " exemplos.");
+
+        for (int i = 0; i < configuracao.numeroEpocas(); i++) {
+            aumentarEpoca();
+            Collections.shuffle(exemplos);
+            for (var exemplo : exemplos) {
+                double[] esperado = new double[] {exemplo.classificacao() == desenhoEsperado ? 1.0 : 0.0};
+                treinar(exemplo.entrada(), esperado);
+            }
+            if (epocaAtual % 10 == 0 || epocaAtual == configuracao.numeroEpocas()) {
+                double taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(epocaAtual);
+                System.out.printf("Época %d/%d concluída. Taxa de aprendizado atual: %.6f\n",
+                        epocaAtual, configuracao.numeroEpocas(), taxaAprendizado);
+            }
+        }
+        System.out.println("Treinamento em lote concluído.");
     }
 
     public void treinar(double[] entrada, double[] esperado) {

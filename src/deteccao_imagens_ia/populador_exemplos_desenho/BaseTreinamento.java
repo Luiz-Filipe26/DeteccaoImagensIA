@@ -2,7 +2,7 @@ package deteccao_imagens_ia.populador_exemplos_desenho;
 
 import org.w3c.dom.Element;
 
-import java.awt.Point;
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +24,13 @@ public class BaseTreinamento {
     }
 
     public List<DesenhoClassificado> getDesenhosClassificados() {
-        return  new ArrayList<>(desenhosClassificados);
+        return new ArrayList<>(desenhosClassificados);
     }
 
-    public List<DesenhoClassificado> getEntradasClassificadas() {
-        return new ArrayList<>(desenhosClassificados);
+    public List<EntradaClassificada> getEntradasClassificadas(int quantidadeEntradas, int maxBolinhasPorCelula) {
+        return desenhosClassificados.stream()
+                .map(desenho -> EntradaClassificada.deDesenho(desenho, quantidadeEntradas, maxBolinhasPorCelula))
+                .toList();
     }
 
     public void salvarExemplos(File arquivo) throws XMLEditor.FalhaXML {

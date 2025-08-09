@@ -34,6 +34,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
 
     private final List<Point> bolinhas = new ArrayList<>();
     private final BaseTreinamento baseTreinamento = new BaseTreinamento();
+    private final AvaliadorDesenho avaliadorDesenho = new AvaliadorDesenho();
 
     public InterfaceGrafica() {
         configurarJFrame();
@@ -128,7 +129,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         limparDesenho.addActionListener(event -> limparDesenho());
         carregarExemplos.addActionListener(event -> carregarExemplos());
         salvarDesenho.addActionListener(event -> salvarDesenho());
-        treinarComExemplos.addActionListener(event -> treinarComExemplo());
+        treinarComExemplos.addActionListener(event -> treinarComExemplos());
     }
 
     public void avaliarDesenhoClicado() {
@@ -136,8 +137,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
             textoBolinhasRestantes.setText(textoBolinhasRestantes.getText() + " - Preencher quantidade mínima de bolinhas!");
             return;
         }
-        var avaliadorDesenho = new AvaliadorDesenho();
-        var resultado = avaliadorDesenho.analisarDesenho(bolinhas, true);
+        var resultado = avaliadorDesenho.analisarDesenho(bolinhas);
         mostrarResultado(resultado);
     }
 
@@ -217,7 +217,9 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         return Optional.of(arquivoParaSalvar);
     }
 
-    private void treinarComExemplo() {
+    private void treinarComExemplos() {
+        avaliadorDesenho.treinarRede(baseTreinamento);
+        mostrarPopUpSucesso("Treinado com os exemplos!");
     }
 
     private void mostrarPopUp(String mensagem) {

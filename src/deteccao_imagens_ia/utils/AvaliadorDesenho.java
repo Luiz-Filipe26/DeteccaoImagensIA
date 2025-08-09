@@ -1,5 +1,6 @@
 package deteccao_imagens_ia.utils;
 
+import deteccao_imagens_ia.populador_exemplos_desenho.BaseTreinamento;
 import deteccao_imagens_ia.populador_exemplos_desenho.ClassificacaoDesenho;
 import deteccao_imagens_ia.populador_exemplos_desenho.DesenhoClassificado;
 import deteccao_imagens_ia.populador_exemplos_desenho.EntradaClassificada;
@@ -14,17 +15,22 @@ import java.util.List;
 public class AvaliadorDesenho {
 
     public static final int MAX_BOLINHAS_POR_CELULA = 10;
+    private RedeNeural redeNeural;
 
-    public ResultadoClassificacao analisarDesenho(List<Point> bolinhas, boolean treinarModelo) {
-        var redeNeural = criarRedeNeuralValida();
+    public ResultadoClassificacao analisarDesenho(List<Point> bolinhas) {
+        if(redeNeural == null) criarRedeNeuralValida();
         var desenhoClassificao = new DesenhoClassificado(ClassificacaoDesenho.BONECO_DE_PALITO, bolinhas);
-        int tamanhoEntrada =  redeNeural.getModelo().getTamanhoEntrada();
+        int tamanhoEntrada = redeNeural.getModelo().getTamanhoEntrada();
         var entradaClassificada = EntradaClassificada.deDesenho(desenhoClassificao, tamanhoEntrada, MAX_BOLINHAS_POR_CELULA);
-        if (treinarModelo) {
-            redeNeural.treinar(entradaClassificada.entrada(), new double[]{1.0});
-            salvarRede(redeNeural.getModelo());
-        }
         return redeNeural.detectar(entradaClassificada.entrada());
+    }
+
+    public void treinarRede(BaseTreinamento baseTreinamento) {
+        int tamanhoEntrada = redeNeural.getModelo().getTamanhoEntrada();
+        var entradas = baseTreinamento.getEntradasClassificadas(tamanhoEntrada, MAX_BOLINHAS_POR_CELULA);
+        redeNeural.setEpocaAtual(0); // carregar de checkpoint
+        redeNeural.treinarEmLote(entradas, ClassificacaoDesenho.BONECO_DE_PALITO);
+        salvarRede(redeNeural.getModelo());
     }
 
     private void salvarRede(ModeloRedeNeural modelo) {
@@ -35,10 +41,9 @@ public class AvaliadorDesenho {
         }
     }
 
-    private RedeNeural criarRedeNeuralValida() {
-        var redeNeural = CriadorRedeNeural.criarRede();
+    private void criarRedeNeuralValida() {
+        redeNeural = CriadorRedeNeural.criarRede();
         if (redeNeural == null) throw new IllegalStateException("Não foi possível ler arquivo de pesos!");
         if (redeNeural.getModelo().saoCamadasInconsistentes()) throw new IllegalStateException("A Rede Neural não é válida!");
-        return redeNeural;
     }
 }
