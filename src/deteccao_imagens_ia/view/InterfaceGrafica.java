@@ -100,6 +100,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         textoBolinhasRestantes = new JLabel();
         textoBolinhasRestantes.setFont(fonte);
         textoBolinhasRestantes.setAlignmentX(Component.CENTER_ALIGNMENT);
+        textoBolinhasRestantes.setText("Nenhuma bolinha desenhada");
 
         checkBoxEhBonecoPalito = new JCheckBox("É um Boneco de Palito");
         checkBoxEhBonecoPalito.setSelected(true);
@@ -174,7 +175,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
 
     private void limparDesenho() {
         bolinhas.clear();
-        textoBolinhasRestantes.setText("");
+        textoBolinhasRestantes.setText("Nenhuma bolinha desenhada");
         limparMensagemInformativa();
         painelGrafico.limparDesenho();
     }
