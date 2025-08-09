@@ -30,11 +30,12 @@ public class RedeNeural {
 
     public void treinarEmLote(List<EntradaClassificada> exemplos, ClassificacaoDesenho desenhoEsperado) {
         System.out.println("Iniciando treinamento em lote com " + exemplos.size() + " exemplos.");
+        var exemplosCopia = new ArrayList<>(exemplos);
 
         for (int i = 0; i < configuracao.numeroEpocas(); i++) {
             aumentarEpoca();
-            Collections.shuffle(exemplos);
-            for (var exemplo : exemplos) {
+            Collections.shuffle(exemplosCopia);
+            for (var exemplo : exemplosCopia) {
                 double[] esperado = new double[] {exemplo.classificacao() == desenhoEsperado ? 1.0 : 0.0};
                 treinar(exemplo.entrada(), esperado);
             }

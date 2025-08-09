@@ -3,15 +3,15 @@ package deteccao_imagens_ia.view;
 import deteccao_imagens_ia.populador_exemplos_desenho.BaseTreinamento;
 import deteccao_imagens_ia.populador_exemplos_desenho.ClassificacaoDesenho;
 import deteccao_imagens_ia.populador_exemplos_desenho.DesenhoClassificado;
-import deteccao_imagens_ia.utils.XMLEditor;
-import deteccao_imagens_ia.utils.AvaliadorDesenho;
 import deteccao_imagens_ia.rede_neural.ResultadoClassificacao;
+import deteccao_imagens_ia.utils.AvaliadorDesenho;
+import deteccao_imagens_ia.utils.XMLEditor;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
@@ -25,9 +25,11 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
 
     private PainelDesenho painelGrafico;
     private JLabel textoBolinhasRestantes;
+    private JLabel labelStatus;
     private JButton limparDesenho;
     private JButton avaliarDesenho;
-    private JButton salvarDesenho;
+    private JButton adicionarDesenho;
+    private JButton salvarBase;
     private JButton carregarExemplos;
     private JButton treinarComExemplos;
     private JCheckBox checkBoxEhBonecoPalito;
@@ -46,6 +48,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     public void adicionarBolinha(Point bolinha) {
         bolinhas.add(bolinha);
         textoBolinhasRestantes.setText(bolinhas.size() + " desenhadas");
+        limparMensagemInformativa();
     }
 
     private void configurarJFrame() {
@@ -67,6 +70,11 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         var painelSuperior = new JPanel();
         painelSuperior.setLayout(new BoxLayout(painelSuperior, BoxLayout.Y_AXIS));
         painelSuperior.add(criarTitulo());
+        labelStatus = new JLabel("Desenhando boneco.", SwingConstants.CENTER);
+        labelStatus.setFont(fonteMenor);
+        labelStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
+        labelStatus.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        painelSuperior.add(labelStatus, BorderLayout.SOUTH);
         painelSuperior.add(criarPainelInstrucao());
         painelSuperior.add(criarPainelBotoes());
         return painelSuperior;
@@ -81,17 +89,28 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     }
 
     private JPanel criarPainelInstrucao() {
-        var painelInstrucao = new JPanel(new GridLayout(2, 1));
+        var painelInstrucao = new JPanel();
+        painelInstrucao.setLayout(new BoxLayout(painelInstrucao, BoxLayout.Y_AXIS));
         painelInstrucao.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         var textoInstrucao = new JLabel("Desenhe um boneco de palito com, no mínimo, " + MINIMO_BOLINHAS + " bolinhas!");
         textoInstrucao.setFont(fonte);
+        textoInstrucao.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         textoBolinhasRestantes = new JLabel();
         textoBolinhasRestantes.setFont(fonte);
+        textoBolinhasRestantes.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        checkBoxEhBonecoPalito = new JCheckBox("É um Boneco de Palito");
+        checkBoxEhBonecoPalito.setSelected(true);
+        checkBoxEhBonecoPalito.setFont(fonteMenor);
+        checkBoxEhBonecoPalito.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         painelInstrucao.add(textoInstrucao);
+        painelInstrucao.add(Box.createVerticalStrut(5)); // espaço vertical entre elementos
         painelInstrucao.add(textoBolinhasRestantes);
+        painelInstrucao.add(Box.createVerticalStrut(5));
+        painelInstrucao.add(checkBoxEhBonecoPalito);
 
         return painelInstrucao;
     }
@@ -99,28 +118,31 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     private JPanel criarPainelBotoes() {
         var painelBotoes = new JPanel();
         painelBotoes.setLayout(new BoxLayout(painelBotoes, BoxLayout.Y_AXIS));
-        var painelLinha2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        var painelLinha3 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        painelBotoes.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         limparDesenho = new JButton("Limpar Desenho");
         limparDesenho.setFont(fonteMenor);
         avaliarDesenho = new JButton("Avaliar Desenho");
         avaliarDesenho.setFont(fonteMenor);
-        checkBoxEhBonecoPalito = new JCheckBox("É um Boneco de Palito");
-        checkBoxEhBonecoPalito.setFont(fonteMenor);
-        salvarDesenho = new JButton("Salvar Desenho");
-        salvarDesenho.setFont(fonteMenor);
+        adicionarDesenho = new JButton("Adicionar Desenho");
+        adicionarDesenho.setFont(fonteMenor);
+        salvarBase = new JButton("Salvar Exemplos");
+        salvarBase.setFont(fonteMenor);
         carregarExemplos = new JButton("Carregar Exemplos");
         carregarExemplos.setFont(fonteMenor);
         treinarComExemplos = new JButton("Treinar com Todos Exemplos");
         treinarComExemplos.setFont(fonteMenor);
-        painelLinha2.add(avaliarDesenho);
+        var painelLinha2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5)); // hgap=5, vgap=5
+        var painelLinha3 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        var painelLinha4 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        painelLinha2.add(adicionarDesenho);
         painelLinha2.add(limparDesenho);
-        painelLinha2.add(checkBoxEhBonecoPalito);
-        painelLinha3.add(salvarDesenho);
-        painelLinha3.add(carregarExemplos);
+        painelLinha3.add(avaliarDesenho);
         painelLinha3.add(treinarComExemplos);
+        painelLinha4.add(carregarExemplos);
+        painelLinha4.add(salvarBase);
         painelBotoes.add(painelLinha2);
         painelBotoes.add(painelLinha3);
+        painelBotoes.add(painelLinha4);
         return painelBotoes;
     }
 
@@ -128,13 +150,14 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         avaliarDesenho.addActionListener(event -> avaliarDesenhoClicado());
         limparDesenho.addActionListener(event -> limparDesenho());
         carregarExemplos.addActionListener(event -> carregarExemplos());
-        salvarDesenho.addActionListener(event -> salvarDesenho());
+        adicionarDesenho.addActionListener(event -> adicionarDesenho());
+        salvarBase.addActionListener(event -> salvarBase());
         treinarComExemplos.addActionListener(event -> treinarComExemplos());
     }
 
     public void avaliarDesenhoClicado() {
         if (bolinhas.size() < MINIMO_BOLINHAS) {
-            textoBolinhasRestantes.setText(textoBolinhasRestantes.getText() + " - Preencher quantidade mínima de bolinhas!");
+            mostrarMensagemInformativa("Preencher quantidade mínima de bolinhas!");
             return;
         }
         var resultado = avaliadorDesenho.analisarDesenho(bolinhas);
@@ -146,12 +169,13 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         var texto = checkBoxEhBonecoPalito.isSelected()
                 ? (ehBoneco ? "Resultado - o modelo acertou: um boneco de palito!" : "Resultado - o modelo errou: Não é um boneco de palito!")
                 : (ehBoneco ? "Resultado: um boneco de palito!" : "Resultado: Não é um boneco de palito!");
-        textoBolinhasRestantes.setText(texto);
+        mostrarMensagemInformativa(texto);
     }
 
     private void limparDesenho() {
         bolinhas.clear();
         textoBolinhasRestantes.setText("");
+        limparMensagemInformativa();
         painelGrafico.limparDesenho();
     }
 
@@ -160,11 +184,11 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         arquivoOpctional.ifPresentOrElse(arquivo -> {
             try {
                 baseTreinamento.carregarExemplos(arquivo);
-                mostrarPopUpSucesso("Exemplos de desenho carregados com sucesso!");
+                mostrarMensagemInformativa("Exemplos de desenho carregados com sucesso!");
             } catch (XMLEditor.FalhaXML falhaXML) {
                 mostrarPopUpErro("Erro ao carregar exemplos: " + falhaXML.getMessage());
             }
-        }, () -> mostrarPopUp("Selecionou nenhum arquivo!"));
+        }, () -> mostrarMensagemInformativa("Nenhum arquivo selecionado."));
     }
 
     private Optional<File> solicitarArquivo(String titulo) {
@@ -176,25 +200,35 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         return Optional.ofNullable(fileChooser.getSelectedFile());
     }
 
-    private void salvarDesenho() {
-        if(!baseTreinamento.isExemplosCarregados()) {
-            int confirmacao = JOptionPane.showConfirmDialog(this, "Deseja carregar a base de treinamento antes?");
-            if(confirmacao == JOptionPane.YES_OPTION)
-                carregarExemplos();
-        }
+    private void adicionarDesenho() {
         var novoDesenhoOpctional = gerarDesenhoClassificado();
         novoDesenhoOpctional.ifPresentOrElse(novoDesenho -> {
-            baseTreinamento.adicionarDesenho(novoDesenho);
-            var arquivoOpcional = solicitarArquivoParaSalvar("Salvar arquivo de exemplos", ".xml");
-            arquivoOpcional.ifPresentOrElse(arquivo -> {
-                try {baseTreinamento.adicionarDesenho(novoDesenho);
-                    baseTreinamento.salvarExemplos(arquivo);
-                    mostrarPopUpSucesso("Desenho adicionado e base de exemplos salva com sucesso!");
-                } catch (XMLEditor.FalhaXML e) {
-                    mostrarPopUpErro("Erro ao salvar o arquivo de exemplos: " + e.getMessage());
-                }
-            }, () -> mostrarPopUp("Operação de salvamento cancelada."));
-        }, () -> mostrarPopUp("É necessário desenhar ao menos " + MINIMO_BOLINHAS + " bolinhas para salvar o exemplo."));
+                    baseTreinamento.adicionarDesenho(novoDesenho);
+                    int totalExemplos = baseTreinamento.getDesenhosClassificados().size();
+                    mostrarMensagemInformativa("Exemplo adicionado com sucesso! Total na sessão: " + totalExemplos);
+                },
+                () -> mostrarPopUpErro("É necessário desenhar ao menos " + MINIMO_BOLINHAS + " bolinhas para salvar o exemplo."));
+    }
+
+    private void salvarBase() {
+        carregarBaseCasoNecessario();
+        var arquivoOpcional = solicitarArquivoParaSalvar("Salvar arquivo de exemplos", ".xml");
+        arquivoOpcional.ifPresentOrElse(arquivo -> {
+            try {
+                baseTreinamento.salvarExemplos(arquivo);
+                mostrarMensagemInformativa("Base de exemplos salva com sucesso!");
+            } catch (XMLEditor.FalhaXML e) {
+                mostrarPopUpErro("Erro ao salvar o arquivo de exemplos: " + e.getMessage());
+            }
+        }, () -> mostrarMensagemInformativa("Operação de salvamento cancelada."));
+    }
+
+    private void carregarBaseCasoNecessario() {
+        if (!baseTreinamento.isExemplosCarregados()) {
+            int confirmacao = JOptionPane.showConfirmDialog(this, "Deseja carregar a base de treinamento antes?");
+            if (confirmacao == JOptionPane.YES_OPTION)
+                carregarExemplos();
+        }
     }
 
     private Optional<DesenhoClassificado> gerarDesenhoClassificado() {
@@ -219,15 +253,15 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
 
     private void treinarComExemplos() {
         avaliadorDesenho.treinarRede(baseTreinamento);
-        mostrarPopUpSucesso("Treinado com os exemplos!");
+        mostrarMensagemInformativa("Treinado com os exemplos!");
     }
 
-    private void mostrarPopUp(String mensagem) {
-        JOptionPane.showMessageDialog(this, mensagem);
+    private void mostrarMensagemInformativa(String mensagem) {
+        labelStatus.setText(mensagem);
     }
 
-    private void mostrarPopUpSucesso(String mensagem) {
-        JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+    private void limparMensagemInformativa() {
+        labelStatus.setText("-----");
     }
 
     private void mostrarPopUpErro(String mensagem) {

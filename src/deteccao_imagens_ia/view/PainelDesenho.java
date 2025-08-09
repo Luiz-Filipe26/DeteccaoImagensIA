@@ -48,6 +48,7 @@ public class PainelDesenho extends JPanel {
 
     private Timer criarTimer() {
         return new Timer(INTERVALO_TIMER_MS, e -> {
+            if(!estaDentroPainel()) return;
             var circulo = new CirculoGrafico(posicaoMouseAtual, (int)(RAIO_BOLINHA * escalaBolinha), COR_BOLINHA);
             circulo.desenhar(desenhoGraphics);
             desenharCursor(posicaoMouseAtual);
@@ -110,6 +111,7 @@ public class PainelDesenho extends JPanel {
 
     private void mouseClicado(MouseEvent mouseEvent) {
         posicaoMouseAtual = mouseEvent.getPoint();
+        if(!estaDentroPainel()) return;
         new CirculoGrafico(posicaoMouseAtual, (int) (RAIO_BOLINHA * escalaBolinha), COR_BOLINHA).desenhar(desenhoGraphics);
         painelDesenhoListener.adicionarBolinha(posicaoMouseAtual);
         timer.start();
@@ -122,5 +124,11 @@ public class PainelDesenho extends JPanel {
     private void mouseSolto(MouseEvent mouseEvent) {
         timer.stop();
         posicaoMouseAtual = mouseEvent.getPoint();
+    }
+
+    private boolean estaDentroPainel() {
+        if (posicaoMouseAtual == null) return false;
+        return posicaoMouseAtual.x >= 0 && posicaoMouseAtual.y  >= 0
+                && posicaoMouseAtual.x <= getWidth() && posicaoMouseAtual.y <= getHeight();
     }
 }

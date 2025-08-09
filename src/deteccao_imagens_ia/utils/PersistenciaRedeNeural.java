@@ -117,6 +117,7 @@ public class PersistenciaRedeNeural {
 
     public static RedeNeural construirRede(List<String> linhas, ModeloRedeNeural modeloAPopular) {
         var perceptronAtual = new Perceptron();
+        modeloAPopular.adicionarCamada(new Camada());
         for (var linha : linhas) {
             processarLinha(linha, modeloAPopular, perceptronAtual);
             perceptronAtual = obterPerceptronAtual(modeloAPopular, perceptronAtual);

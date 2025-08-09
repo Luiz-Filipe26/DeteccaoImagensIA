@@ -20,7 +20,8 @@ public class BaseTreinamento {
 
 
     public void adicionarDesenho(DesenhoClassificado desenho) {
-        desenhosClassificados.add(desenho);
+        if(!desenhosClassificados.contains(desenho))
+            desenhosClassificados.add(desenho);
     }
 
     public List<DesenhoClassificado> getDesenhosClassificados() {
@@ -34,7 +35,7 @@ public class BaseTreinamento {
     }
 
     public void salvarExemplos(File arquivo) throws XMLEditor.FalhaXML {
-        var editor = XMLEditor.deArquivo(arquivo);
+        var editor = XMLEditor.comNovoDocumento();
         var raiz = editor.criarElementoRaiz(RAIZ_TAG);
         for (var desenhoClassificado : desenhosClassificados)
             montarExemplo(raiz, desenhoClassificado);
@@ -43,7 +44,7 @@ public class BaseTreinamento {
 
     private void montarExemplo(XMLEditor.ElementoEncadeavel raiz, DesenhoClassificado desenho) {
         raiz.comFilho(DESENHO_TAG, desenhoElem -> desenhoElem
-                .comAtributo(HASH_ATR, desenho.gerarHash())
+                .comAtributo(HASH_ATR,  Integer.toHexString(desenho.hashCode()))
                 .comAtributo(ROTULO_ATR, desenho.classificacaoDesenho().paraTexto())
                 .comFilhosDeColecao(PONTO_TAG, desenho.pontosDesenho(), (pontoElem, ponto) ->
                         pontoElem

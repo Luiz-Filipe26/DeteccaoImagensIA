@@ -6,10 +6,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public record DesenhoClassificado(ClassificacaoDesenho classificacaoDesenho, List<Point> pontosDesenho) {
-    public String gerarHash() {
+
+    @Override
+    public int hashCode() {
         var pontosCopia = new ArrayList<>(pontosDesenho());
         var comparador = Comparator.comparingDouble(Point::getX).thenComparingDouble(Point::getY);
         pontosCopia.sort(comparador);
-        return Integer.toHexString(pontosCopia.hashCode());
+        return pontosCopia.hashCode();
     }
 }
