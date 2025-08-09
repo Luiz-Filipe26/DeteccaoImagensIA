@@ -1,8 +1,9 @@
 package deteccao_imagens_ia.rede_neural;
 
 import deteccao_imagens_ia.populador_exemplos_desenho.ClassificacaoDesenho;
-import deteccao_imagens_ia.populador_exemplos_desenho.DesenhoClassificado;
 import deteccao_imagens_ia.populador_exemplos_desenho.EntradaClassificada;
+import deteccao_imagens_ia.utils.PersistenciaRedeNeural;
+import deteccao_imagens_ia.utils.XMLEditor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,20 +11,17 @@ import java.util.List;
 
 public class RedeNeural {
     private final ModeloRedeNeural modelo;
+    private final EstadoTreinamento estadoTreinamento;
     private final RedeNeuralConfiguracao configuracao;
-    private int epocaAtual = 0;
 
-    public RedeNeural(RedeNeuralConfiguracao redeNeuralConfiguracao, ModeloRedeNeural modelo) {
-        this.configuracao = redeNeuralConfiguracao;
+    public RedeNeural(EstadoTreinamento estadoTreinamento, ModeloRedeNeural modelo) {
+        this.configuracao = estadoTreinamento.getRedeNeuralConfiguracao();
+        this.estadoTreinamento = estadoTreinamento;
         this.modelo = modelo;
     }
 
     public void aumentarEpoca() {
-        epocaAtual++;
-    }
-
-    public void setEpocaAtual(int epocaAtual) {
-        this.epocaAtual = epocaAtual;
+        estadoTreinamento.incrementarEpocaAtual();
     }
 
     public ModeloRedeNeural getModelo() {
@@ -40,11 +38,17 @@ public class RedeNeural {
                 double[] esperado = new double[] {exemplo.classificacao() == desenhoEsperado ? 1.0 : 0.0};
                 treinar(exemplo.entrada(), esperado);
             }
-            if (epocaAtual % 10 == 0 || epocaAtual == configuracao.numeroEpocas()) {
+            int epocaAtual = estadoTreinamento.getEpocaAtual();;
+            if (estadoTreinamento.getEpocaAtual() % 10 == 0 || epocaAtual == configuracao.numeroEpocas()) {
                 double taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(epocaAtual);
                 System.out.printf("Época %d/%d concluída. Taxa de aprendizado atual: %.6f\n",
                         epocaAtual, configuracao.numeroEpocas(), taxaAprendizado);
             }
+        }
+        try {
+            PersistenciaRedeNeural.salvarEstadoRedeNeural(estadoTreinamento);
+        } catch (XMLEditor.FalhaXML e) {
+            System.err.println("Falha ao salvar estado da rede neural!");
         }
         System.out.println("Treinamento em lote concluído.");
     }
@@ -141,7 +145,7 @@ public class RedeNeural {
     }
 
     private void aplicarDeltas(HistoricoDeAtivacao historicoDeAtivacao, double[][] deltas, double[] entrada) {
-        var taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(epocaAtual);
+        double taxaAprendizado = configuracao.obterTaxaAprendizadoAtual(estadoTreinamento.getEpocaAtual());
         int camadaIndex = 0;
         for (var camada : modelo.getIteradorDeCamadas()) {
             double[] entradas = (camadaIndex == 0) ? entrada : historicoDeAtivacao.saidasAtivadas().get(camadaIndex - 1);

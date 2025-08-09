@@ -14,6 +14,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,6 +71,10 @@ public class XMLEditor {
 
         public ElementoEncadeavel comFilho(String nome) {
             return comFilho(nome, configurador -> {});
+        }
+
+        public Optional<ElementoEncadeavel> obterFilho(String nomeElemento) {
+            return this.obterFilhosStream(nomeElemento).findFirst();
         }
 
         public Stream<ElementoEncadeavel> obterFilhosStream(String nomeElemento) {

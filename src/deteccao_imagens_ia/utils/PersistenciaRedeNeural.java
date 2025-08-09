@@ -2,17 +2,21 @@ package deteccao_imagens_ia.utils;
 
 import deteccao_imagens_ia.rede_neural.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class PersistenciaRedeNeural {
 
     private static final String PASTA_ARQUIVO = "IA-Desenho";
-    private static final String NOME_ARQUIVO = "pesos_rede.txt";
-    private static final Path CAMINHO_ARQUIVO = resolverCaminho(PASTA_ARQUIVO, NOME_ARQUIVO);
+    private static final String NOME_ARQUIVO_PESOS = "pesos_rede.txt";
+    private static final Path CAMINHO_ARQUIVO_PESOS = resolverCaminho(PASTA_ARQUIVO, NOME_ARQUIVO_PESOS);
+    private static final String NOME_ARQUIVO_CONFIG = "estado_rede.xml";
+    private static final Path CAMINHO_ARQUIVO_CONFIG = resolverCaminho(PASTA_ARQUIVO, NOME_ARQUIVO_CONFIG);
     private static final int PRECISAO_DECIMAL = 6;
     private static final FormatadorDecimal formatadorDecimal = new FormatadorDecimal(PRECISAO_DECIMAL);
 
@@ -31,7 +35,7 @@ public class PersistenciaRedeNeural {
 
     public static List<String> lerArquivoDePesos() {
         try {
-            var linhas = Files.readAllLines(CAMINHO_ARQUIVO);
+            var linhas = Files.readAllLines(CAMINHO_ARQUIVO_PESOS);
             return linhas.stream().map(String::trim).toList();
         } catch (Exception e) {
             return List.of();
@@ -50,13 +54,74 @@ public class PersistenciaRedeNeural {
         return pasta.resolve(nomeArquivo);
     }
 
+    public static EstadoTreinamento carregarEstadoTreinamento() {
+        File arquivoConfig = CAMINHO_ARQUIVO_CONFIG.toFile();
+
+        if (!arquivoConfig.exists()) {
+            System.out.println("Arquivo de configuração não encontrado. Usando configuração padrão.");
+            return new EstadoTreinamento();
+        }
+
+        try {
+            var editor = XMLEditor.deArquivo(arquivoConfig);
+            var raiz = editor.obterElementoRaiz();
+
+            int epocaAtual = obterValorIntObrigatorio(raiz, "epocaAtual");
+            int numeroEpocas = obterValorIntObrigatorio(raiz, "numeroEpocas");
+            double limiar = obterValorDoubleObrigatorio(raiz, "limiar");
+            double taxaAprendizadoInicial = obterValorDoubleObrigatorio(raiz, "taxaAprendizadoInicial");
+            double taxaDecaimento = obterValorDoubleObrigatorio(raiz, "taxaDecaimentoTaxaAprendizado");
+            double passoDecaimento = obterValorDoubleObrigatorio(raiz, "passoDecaimentoTaxaAprendizado");
+
+            System.out.println("Configuração da rede carregada do arquivo com sucesso.");
+            var config = new RedeNeuralConfiguracao(numeroEpocas, limiar, taxaAprendizadoInicial, taxaDecaimento, passoDecaimento);
+            return new EstadoTreinamento(config, epocaAtual);
+
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar ou processar o arquivo de configuração: " + e.getMessage());
+            System.err.println("Usando configuração padrão da rede neural.");
+            return new EstadoTreinamento();
+        }
+    }
+
+    private static int obterValorIntObrigatorio(XMLEditor.ElementoEncadeavel pai, String nomeTag) {
+        return Integer.parseInt(obterValorObrigatorio(pai, nomeTag));
+    }
+
+    private static double obterValorDoubleObrigatorio(XMLEditor.ElementoEncadeavel pai, String nomeTag) {
+        return Double.parseDouble(obterValorObrigatorio(pai, nomeTag));
+    }
+
+    private static String obterValorObrigatorio(XMLEditor.ElementoEncadeavel pai, String nomeTag) {
+        String mensagemErro = "Tag obrigatória de configuração não encontrada: <" + nomeTag + ">";
+        return pai.obterFilho(nomeTag)
+                .orElseThrow(() -> new NoSuchElementException(mensagemErro))
+                .obterValor();
+    }
+
+    public static void salvarEstadoRedeNeural(EstadoTreinamento estadoTreinamento) throws XMLEditor.FalhaXML {
+        var config = estadoTreinamento.getRedeNeuralConfiguracao();
+        File arquivoConfig = CAMINHO_ARQUIVO_CONFIG.toFile();
+        XMLEditor editor = XMLEditor.comNovoDocumento();
+        editor.criarElementoRaiz("configuracao")
+            .comFilho("epocaAtual", estadoTreinamento.getEpocaAtual().toString())
+            .comFilho("numeroEpocas", config.numeroEpocas().toString())
+            .comFilho("limiar", config.limiar().toString())
+            .comFilho("taxaAprendizadoInicial", config.taxaAprendizadoInicial().toString())
+            .comFilho("taxaDecaimentoTaxaAprendizado", config.taxaDecaimentoTaxaAprendizado().toString())
+            .comFilho("passoDecaimentoTaxaAprendizado", config.passoDecaimentoTaxaAprendizado().toString());
+
+        editor.salvar(arquivoConfig);
+        System.out.println("Arquivo de configuração salvo em: " + arquivoConfig.getAbsolutePath());
+    }
+
     public static RedeNeural construirRede(List<String> linhas, ModeloRedeNeural modeloAPopular) {
         var perceptronAtual = new Perceptron();
         for (var linha : linhas) {
             processarLinha(linha, modeloAPopular, perceptronAtual);
             perceptronAtual = obterPerceptronAtual(modeloAPopular, perceptronAtual);
         }
-        return new RedeNeural(new RedeNeuralConfiguracao(), modeloAPopular);
+        return new RedeNeural(new EstadoTreinamento(), modeloAPopular);
     }
 
     private static void processarLinha(String linha, ModeloRedeNeural modelo, Perceptron perceptronAtual) {
@@ -91,7 +156,8 @@ public class PersistenciaRedeNeural {
             if (i > 0) linhas.add(SEPARADOR_CAMADA_PREFIXO + " Camada " + i);
             criarCamadaLinhas(modelo.getCamada(i), linhas);
         }
-        Files.write(CAMINHO_ARQUIVO, linhas);}
+        Files.write(CAMINHO_ARQUIVO_PESOS, linhas);
+    }
 
     private static void criarCamadaLinhas(Camada camada, List<String> linhas) {
         var stringBuilder = inicializarStringBuilder(camada);

@@ -22,7 +22,8 @@ public class CriadorRedeNeural {
 
     private static RedeNeural criarRedeNeuralVazia() {
         var modelo = new ModeloRedeNeural(obterTamanhoPorCamada());
-        return new RedeNeural(new RedeNeuralConfiguracao(), modelo);
+        var estadoTreinamento = PersistenciaRedeNeural.carregarEstadoTreinamento();
+        return new RedeNeural(estadoTreinamento, modelo);
     }
 
     private static List<Integer> obterTamanhoPorCamada() {
