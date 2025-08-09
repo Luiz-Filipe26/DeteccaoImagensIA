@@ -6,9 +6,9 @@ import java.awt.*;
 import java.util.List;
 
 public class CriadorRedeNeural {
-    private static final int TAMANHO_CAMADA_ENTRADA = 2500;
-    private static final int TAMANHO_CAMADA_OCULTA_1 = 100;
-    private static final int TAMANHO_CAMADA_OCULTA_2 = 30;
+    private static final int TAMANHO_CAMADA_ENTRADA = 900;
+    private static final int TAMANHO_CAMADA_OCULTA_1 = 25;
+    private static final int TAMANHO_CAMADA_OCULTA_2 = 2;
     private static final int TAMANHO_CAMADA_SAIDA = 1;
 
     public static RedeNeural criarRede() {
