@@ -9,14 +9,16 @@ import deteccao_imagens_ia.utils.XMLEditor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
-    private static final int LARGURA_JANELA = 800;
-    private static final int ALTURA_JANELA = 1100;
+    private static final int LARGURA_PAINEL_DESENHO = 600;
+    private static final int ALTURA_PAINEL_DESENHO = 600;
     private static final int MINIMO_BOLINHAS = 20;
 
     private final static Font fonte = new Font("Arial", Font.PLAIN, 20);
@@ -42,6 +44,8 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         configurarJFrame();
         iniciarComponentes();
         configurarEventos();
+        pack();
+        setLocationRelativeTo(null); // Centraliza a janela após o pack()
     }
 
     @Override
@@ -54,15 +58,19 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
     private void configurarJFrame() {
         setTitle("Desenhador de Boneco de Palito");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(LARGURA_JANELA, ALTURA_JANELA);
-        setLocationRelativeTo(null);
+        setResizable(false);
     }
 
     private void iniciarComponentes() {
         var painelPrincipal = getContentPane();
         painelPrincipal.setLayout(new BorderLayout());
-        painelPrincipal.add(criarPainelSuperior(), BorderLayout.NORTH);
-        painelGrafico = new PainelDesenho(this, new Dimension(LARGURA_JANELA, ALTURA_JANELA));
+
+        var painelSuperior = criarPainelSuperior();
+        painelPrincipal.add(painelSuperior, BorderLayout.NORTH);
+
+        var dimensaoPainelDesenho = new Dimension(LARGURA_PAINEL_DESENHO, ALTURA_PAINEL_DESENHO);
+        painelGrafico = new PainelDesenho(this, dimensaoPainelDesenho);
+        painelGrafico.setPreferredSize(dimensaoPainelDesenho);
         painelPrincipal.add(painelGrafico, BorderLayout.CENTER);
     }
 
@@ -154,6 +162,15 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         adicionarDesenho.addActionListener(event -> adicionarDesenho());
         salvarBase.addActionListener(event -> salvarBase());
         treinarComExemplos.addActionListener(event -> treinarComExemplos());
+        painelGrafico.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    adicionarDesenho();
+                    limparDesenho();
+                }
+            }
+        });
     }
 
     public void avaliarDesenhoClicado() {
@@ -169,7 +186,7 @@ public class InterfaceGrafica extends JFrame implements PainelDesenhoListener {
         var ehBoneco = resultado == ResultadoClassificacao.DESENHO_ESPERADO;
         var texto = checkBoxEhBonecoPalito.isSelected()
                 ? (ehBoneco ? "Resultado - o modelo acertou: um boneco de palito!" : "Resultado - o modelo errou: Não é um boneco de palito!")
-                : (ehBoneco ? "Resultado: um boneco de palito!" : "Resultado: Não é um boneco de palito!");
+                : (ehBoneco ? "Resultado - o modelo errou: um boneco de palito!" : "Resultado - o modelo acertou: Não é um boneco de palito!");
         mostrarMensagemInformativa(texto);
     }
 

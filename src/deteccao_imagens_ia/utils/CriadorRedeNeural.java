@@ -8,7 +8,7 @@ import java.util.List;
 public class CriadorRedeNeural {
     private static final int TAMANHO_CAMADA_ENTRADA = 900;
     private static final int TAMANHO_CAMADA_OCULTA_1 = 25;
-    private static final int TAMANHO_CAMADA_OCULTA_2 = 2;
+    //private static final int TAMANHO_CAMADA_OCULTA_2 = 2;
     private static final int TAMANHO_CAMADA_SAIDA = 1;
 
     public static RedeNeural criarRede() {
@@ -27,6 +27,6 @@ public class CriadorRedeNeural {
     }
 
     private static List<Integer> obterTamanhoPorCamada() {
-        return List.of(TAMANHO_CAMADA_ENTRADA, TAMANHO_CAMADA_OCULTA_1, TAMANHO_CAMADA_OCULTA_2, TAMANHO_CAMADA_SAIDA);
+        return List.of(TAMANHO_CAMADA_ENTRADA, TAMANHO_CAMADA_OCULTA_1, TAMANHO_CAMADA_SAIDA);
     }
 }
