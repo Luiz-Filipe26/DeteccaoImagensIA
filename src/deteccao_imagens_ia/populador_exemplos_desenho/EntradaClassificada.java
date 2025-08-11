@@ -1,7 +1,7 @@
 package deteccao_imagens_ia.populador_exemplos_desenho;
 
 import java.awt.*;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classificacao) {
@@ -12,8 +12,9 @@ public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classif
     }
 
     private static double[] normalizarEntrada(List<Point> pontos, int quantidadeEntradas, int maxBolinhaPorCelula) {
+        if (pontos == null || pontos.isEmpty()) return new double[quantidadeEntradas];
         int[] contagens = new int[quantidadeEntradas];
-        Rectangle areaDesenho = encontrarAreaDesenho(pontos);
+        var areaDesenho = encontrarAreaDesenho(pontos);
         contarEntradas(pontos, areaDesenho, contagens);
         return normalizarContagem(contagens, maxBolinhaPorCelula);
     }
@@ -27,30 +28,50 @@ public record EntradaClassificada(double[] entrada, ClassificacaoDesenho classif
     }
 
     private static void contarEntradas(List<Point> pontos, Rectangle areaDesenho, int[] pontosPorEntrada) {
-        int tamanhoLadoDoGrid = calcularTamanhoLadoDoGrid(pontosPorEntrada.length);
-        for (var bolinha : pontos) {
-            int coluna = (int) ((double) (bolinha.x - areaDesenho.x) / areaDesenho.width * tamanhoLadoDoGrid);
-            int linha = (int) ((double) (bolinha.y - areaDesenho.y) / areaDesenho.height * tamanhoLadoDoGrid);
-            if (!estaDentroDoGrid(linha, coluna, tamanhoLadoDoGrid)) continue;
-            int indice = linha * tamanhoLadoDoGrid + coluna;
-            pontosPorEntrada[indice]++;
-        }
+        int menorLadoIdealGrid = calcularMenorLadoIdealGrid(pontosPorEntrada.length);
+        int maiorLadoIdealGrid = pontosPorEntrada.length / menorLadoIdealGrid;
+        var gridIdeal = new Dimension(menorLadoIdealGrid, maiorLadoIdealGrid);
+        for (var ponto : pontos)
+            calcularIndiceEntrada(areaDesenho, gridIdeal, ponto).ifPresent(indice -> pontosPorEntrada[indice]++);
+    }
+
+    /**
+     * Calcula o menor lado do grid "mais quadrado" possível que pode ser criado
+     */
+    private static int calcularMenorLadoIdealGrid(int area) {
+        int melhorLadoMenor = 1;
+        for (int ladoMenorCandidato = 2; ladoMenorCandidato <= Math.sqrt(area); ladoMenorCandidato++)
+            if (area % ladoMenorCandidato == 0)
+                melhorLadoMenor = obterMelhorLadoMenor(area, melhorLadoMenor, ladoMenorCandidato);
+        return melhorLadoMenor;
+    }
+
+    private static int obterMelhorLadoMenor(int area, int ladoMenor1, int ladoMenor2) {
+        int ladoMaior1 = area / ladoMenor1;
+        int ladoMaior2 = area / ladoMenor2;
+        return ladoMaior1 - ladoMenor1 < ladoMaior2 - ladoMenor2 ? ladoMenor1 : ladoMenor2;
+    }
+
+    private static Optional<Integer> calcularIndiceEntrada(Rectangle areaDesenho, Dimension grid, Point ponto) {
+        double posXRelativa = calcularPosicaoRelativa(ponto.x, areaDesenho.x, areaDesenho.width);
+        int coluna = (int) (grid.width * posXRelativa);
+        double posYRelativa = calcularPosicaoRelativa(ponto.y, areaDesenho.y, areaDesenho.height);
+        int linha = (int) (grid.height * posYRelativa);
+        return estaDentroDoGrid(linha, coluna, grid) ? Optional.of(linha * grid.width + coluna) : Optional.empty();
+    }
+
+    private static double calcularPosicaoRelativa(double coordenadaPonto, int coordenadaMinimaArea, int tamanhoArea) {
+        if (tamanhoArea == 0) return 0.0;
+        return (coordenadaPonto - coordenadaMinimaArea) / (double) tamanhoArea;
+    }
+
+    private static boolean estaDentroDoGrid(int linha, int coluna, Dimension grid) {
+        return linha >= 0 && linha < grid.height && coluna >= 0 && coluna < grid.width;
     }
 
     private static double[] normalizarContagem(int[] pontosPorEntrada, int maxBolinhaPorCelula) {
         return Arrays.stream(pontosPorEntrada)
                 .mapToDouble(item -> Math.min((double) item / maxBolinhaPorCelula, 1.0))
                 .toArray();
-    }
-
-    private static boolean estaDentroDoGrid(int linha, int coluna, int tamanhoLadoGrid) {
-        return linha >= 0 && linha < tamanhoLadoGrid && coluna >= 0 && coluna < tamanhoLadoGrid;
-    }
-
-    private static int calcularTamanhoLadoDoGrid(int quantidadeEntradas) {
-        int lado = (int) Math.sqrt(quantidadeEntradas);
-        if (lado * lado != quantidadeEntradas)
-            throw new IllegalStateException("Número de entradas da rede não forma um grid quadrado perfeito!");
-        return lado;
     }
 }

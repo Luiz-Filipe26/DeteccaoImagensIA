@@ -14,6 +14,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -75,6 +76,14 @@ public class XMLEditor {
 
         public Optional<ElementoEncadeavel> obterFilho(String nomeElemento) {
             return this.obterFilhosStream(nomeElemento).findFirst();
+        }
+
+        public <T> List<T> mapearFilhosParaLista(String nomeElemento, Function<ElementoEncadeavel, T> mapeador) {
+            return obterFilhosStream(nomeElemento).map(mapeador).toList();
+        }
+
+        public <T> Stream<T> mapearFilhos(String nomeElemento, Function<ElementoEncadeavel, T> mapeador) {
+            return obterFilhosStream(nomeElemento).map(mapeador);
         }
 
         public Stream<ElementoEncadeavel> obterFilhosStream(String nomeElemento) {

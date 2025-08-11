@@ -20,7 +20,7 @@ public class BaseTreinamento {
 
 
     public void adicionarDesenho(DesenhoClassificado desenho) {
-        if(!desenhosClassificados.contains(desenho))
+        if (!desenhosClassificados.contains(desenho))
             desenhosClassificados.add(desenho);
     }
 
@@ -37,19 +37,14 @@ public class BaseTreinamento {
     public void salvarExemplos(File arquivo) throws XMLEditor.FalhaXML {
         var editor = XMLEditor.comNovoDocumento();
         var raiz = editor.criarElementoRaiz(RAIZ_TAG);
-        for (var desenhoClassificado : desenhosClassificados)
-            montarExemplo(raiz, desenhoClassificado);
-        editor.salvar(arquivo);
-    }
-
-    private void montarExemplo(XMLEditor.ElementoEncadeavel raiz, DesenhoClassificado desenho) {
-        raiz.comFilho(DESENHO_TAG, desenhoElem -> desenhoElem
-                .comAtributo(HASH_ATR,  Integer.toHexString(desenho.hashCode()))
+        raiz.comFilhosDeColecao(DESENHO_TAG, desenhosClassificados, (desenhoElem, desenho) -> desenhoElem
+                .comAtributo(HASH_ATR, Integer.toHexString(desenho.hashCode()))
                 .comAtributo(ROTULO_ATR, desenho.classificacaoDesenho().paraTexto())
-                .comFilhosDeColecao(PONTO_TAG, desenho.pontosDesenho(), (pontoElem, ponto) ->
-                        pontoElem
+                .comFilhosDeColecao(PONTO_TAG, desenho.pontosDesenho(), (pontoElem, ponto) -> pontoElem
                         .comAtributo(PONTO_X_ATR, String.valueOf(ponto.x))
-                        .comAtributo(PONTO_Y_ATR, String.valueOf(ponto.y))));
+                        .comAtributo(PONTO_Y_ATR, String.valueOf(ponto.y)))
+        );
+        editor.salvar(arquivo);
     }
 
     public boolean isExemplosCarregados() {
@@ -60,20 +55,20 @@ public class BaseTreinamento {
         var editor = XMLEditor.deArquivo(arquivo);
         desenhosClassificados.clear();
         desenhosClassificados.addAll(
-                editor.obterElementoRaiz().obterFilhosStream(DESENHO_TAG).map(
-                        this::lerDesenhoClassificado
-                ).toList());
+                editor.obterElementoRaiz().mapearFilhosParaLista(
+                        DESENHO_TAG, this::lerDesenhoClassificado
+                ));
         exemplosCarregados = true;
     }
 
     private DesenhoClassificado lerDesenhoClassificado(XMLEditor.ElementoEncadeavel desenhoElem) {
-        String rotulo = desenhoElem.getElemento().getAttribute(ROTULO_ATR);
+        String rotulo = desenhoElem.obterAtributo(ROTULO_ATR);
         var classificacao = ClassificacaoDesenho.deTexto(rotulo);
-        List<Point> pontos = desenhoElem.obterFilhosStream(PONTO_TAG).map(pontoElem -> {
+        var pontos = desenhoElem.mapearFilhosParaLista(PONTO_TAG, pontoElem -> {
             int x = Integer.parseInt(pontoElem.obterAtributo(PONTO_X_ATR));
             int y = Integer.parseInt(pontoElem.obterAtributo(PONTO_Y_ATR));
             return new Point(x, y);
-        }).toList();
+        });
         return new DesenhoClassificado(classificacao, pontos);
     }
 }
